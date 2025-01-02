@@ -2,16 +2,62 @@ const simpleGit = require("simple-git");
 const git = simpleGit();
 const fs = require("fs-extra");
 const path = require("path");
+const unzipper = require("unzipper");
+const axios = require("axios");
 
-async function cloneRepository(repoUrl: string, localPath: string) {
+async function downloadRepository(repoUrl: string, localPath: string) {
   try {
-    await git.clone(repoUrl, localPath);
-    console.log(`Repository cloned to ${localPath}`);
+    // Extract owner and repo name from the URL
+    const match = repoUrl.match(/github\.com\/(.+?)\/(.+?)(\.git)?$/);
+    if (!match) {
+      throw new Error("Invalid GitHub repository URL.");
+    }
+
+    const [_, owner, repo] = match;
+
+    // Construct GitHub API URL for downloading as ZIP
+    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
+
+    console.log(`Downloading repository from: ${zipUrl}`);
+
+    // Download the ZIP file
+    const response = await axios({
+      url: zipUrl,
+      method: "GET",
+      responseType: "stream",
+    });
+
+    const zipPath = path.join(localPath, `${repo}.zip`);
+    await fs.ensureDir(localPath);
+
+    // Save the ZIP file
+    const writer = fs.createWriteStream(zipPath);
+    response.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+    });
+
+    console.log("Repository downloaded. Extracting...");
+
+    // Extract the ZIP file
+    await fs
+      .createReadStream(zipPath)
+      .pipe(unzipper.Extract({ path: localPath }))
+      .promise();
+
+    console.log(`Repository extracted to ${localPath}`);
+    await fs.remove(zipPath); // Clean up ZIP file
   } catch (error) {
-    console.error("Error cloning repository:", error);
+    console.error("Error downloading repository:", error);
   }
 }
 
+// Example usage
+const repoUrl = "https://github.com/hashir-ayaz/JobProviderPanel.git"; // Replace with actual repo URL
+const localPath = "./cloned_codebases/codebase3_downloaded"; // Replace with desired local path
+downloadRepository(repoUrl, localPath);
 // cloneRepository(
 //   "https://github.com/hashir-ayaz/JobProviderPanel.git",
 //   "/home/hashir/Documents/codebase-rag/cloned_codebases/codebase2"
@@ -67,6 +113,6 @@ async function collectCodeFiles(dirPath: string) {
 }
 
 // Example usage:
-const repoPath =
-  "/home/hashir/Documents/codebase-rag/cloned_codebases/codebase1"; // Replace with your repository path
-collectCodeFiles(repoPath);
+// const repoPath =
+//   "/home/hashir/Documents/codebase-rag/cloned_codebases/codebase1"; // Replace with your repository path
+// collectCodeFiles(repoPath);
