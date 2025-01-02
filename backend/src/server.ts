@@ -36,13 +36,17 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
 /**
  * this endpoint receives the query -> then embeds the query and searches the code base for the appropirate chunks -> then calls open ai api and returns a text response
  */
-app.post("/api/query", (req: any, res: any) => {
+app.post("/api/query", async (req: any, res: any) => {
   const folderName = req.body.folderName;
   // get the query
   const query: string = req.body.query;
   // search the code base for the most relevant chunks
-  queryCodebase(query, folderName);
+  const response_docs = await queryCodebase(query, folderName);
   // return the response
+
+  // give the response to the openai and ask it to make a response
+
+  res.json({ response: response_docs });
 });
 
 app.listen(port, () => {

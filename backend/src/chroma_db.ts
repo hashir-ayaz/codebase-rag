@@ -37,7 +37,10 @@ const chunkCodebase = async (localPath: string) => {
 
 const saveToVectorDb = async (folderName: string, docs: object) => {
   // get collection
-  const collection = await client.getOrCreateCollection({ name: folderName });
+  const collection = await client.getOrCreateCollection({
+    name: folderName,
+    embeddingFunction: embedder,
+  });
 
   await collection.add(docs);
 
@@ -48,7 +51,10 @@ const saveToVectorDb = async (folderName: string, docs: object) => {
 
 const queryCodebase = async (query: string, folderName: string) => {
   // get collection
-  const collection = await client.getOrCreateCollection({ name: folderName });
+  const collection = await client.getOrCreateCollection({
+    name: folderName,
+    embeddingFunction: embedder,
+  });
 
   const response = await collection.query({
     queryTexts: [query],

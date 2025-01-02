@@ -1,3 +1,4 @@
+const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const validExtensions: string[] = [
   ".js", // JavaScript
   ".ts", // TypeScript
@@ -51,4 +52,16 @@ const validTextSplitters = {
   sol: ".sol",
 };
 
-export { validExtensions, validTextSplitters };
+const systemPrompt = ChatPromptTemplate.fromMessages([
+  [
+    "system",
+    `You are an expert programming assistant. Your task is to provide accurate and helpful responses to coding questions based on the given context. 
+    Use the provided code snippets and documentation to inform your answers. 
+    If the information isn't sufficient to answer the question, say so clearly.
+    Always provide code examples when appropriate, and explain your reasoning.`,
+  ],
+  ["user", `{context}`],
+  ["user", "Answer the following question: {question}"],
+]);
+
+export { validExtensions, validTextSplitters, systemPrompt };
