@@ -1,3 +1,4 @@
+const { chunkCodebase, saveToVectorDb, queryCodebase } = require("./chroma_db");
 const { generateNameForCodeFolder } = require("./utils");
 const { downloadRepository, collectCodeFiles } = require("./code_service");
 const express = require("express");
@@ -20,9 +21,10 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
     await collectCodeFiles(localPath);
 
     // chunk the code base
-    // chunkCodebase(localPath);
-
+    const docs = await chunkCodebase(localPath);
     // store the codebase in the chroma db
+
+    await saveToVectorDb(folderName, docs);
 
     res.json({ message: "Repository downloaded and code collected." });
   } catch (error) {
@@ -35,10 +37,11 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
  * this endpoint receives the query -> then embeds the query and searches the code base for the appropirate chunks -> then calls open ai api and returns a text response
  */
 app.post("/api/query", (req: any, res: any) => {
+  const folderName = req.body.folderName;
   // get the query
-  // embed the query
+  const query: string = req.body.query;
   // search the code base for the most relevant chunks
-  // call the open ai api
+  queryCodebase(query, folderName);
   // return the response
 });
 

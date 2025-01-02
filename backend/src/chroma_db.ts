@@ -2,6 +2,8 @@ const { ChromaClient } = require("chromadb");
 const { OpenAIEmbeddingFunction } = require("chromadb");
 const dotenv = require("dotenv");
 const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
+const fs = require("fs-extra");
+const path = require("path");
 
 dotenv.config();
 
@@ -15,65 +17,46 @@ const embedder = new OpenAIEmbeddingFunction({
   openai_api_key: OPENAI_API_KEY,
 });
 
-const createCollection = async (name: string) => {
-  const collection = await client.createCollection({
-    name: name,
-    // metadata: { description: "My MERN app collection" },
-    embeddingFunction: embedder,
-  });
-  return collection;
-};
-
-const addDocuments = async (
-  collectionName: string,
-  documentsObject: object
-) => {
-  const collection = await client.getOrCreateCollection({
-    name: collectionName,
-    embeddingFunction: embedder,
+// TODO make the js generic
+const chunkCodebase = async (localPath: string) => {
+  const textSplitter = new RecursiveCharacterTextSplitter().fromLanguage("js", {
+    chunkSize: 60,
+    overlap: 0,
   });
 
-  await collection.upsert(documentsObject);
+  // load the codebase file (all_code.txt)
+  const codebase = await fs.readFile(
+    path.join(localPath, "/all_code.txt"),
+    "utf-8"
+  );
+
+  const docs = await textSplitter.createDocuments([codebase]);
+  console.log(docs);
+  return docs;
 };
 
-const queryCollection = async (collectionName: string, queryTexts: string) => {
-  const collection = await client.getCollection({
-    name: collectionName,
-    embeddingFunction: embedder,
+const saveToVectorDb = async (folderName: string, docs: object) => {
+  // get collection
+  const collection = await client.getOrCreateCollection({ name: folderName });
+
+  await collection.add(docs);
+
+  // display the data
+  const peekedData = await collection.peek();
+  console.log(peekedData);
+};
+
+const queryCodebase = async (query: string, folderName: string) => {
+  // get collection
+  const collection = await client.getOrCreateCollection({ name: folderName });
+
+  const response = await collection.query({
+    queryTexts: [query],
+    nResults: 5,
   });
+  console.log(response);
 
-  const results = await collection.query({
-    queryTexts: queryTexts,
-    nResults: 4,
-  });
-
-  console.log(results);
-  return results;
+  return response;
 };
 
-const peekCollection = async (collectionName: string) => {
-  const collection = await client.getCollection({
-    name: collectionName,
-    embeddingFunction: embedder,
-  });
-
-  const peek = await collection.peek();
-  console.log(peek);
-
-  return peek;
-};
-
-// createCollection("users");
-
-// addDocuments("users");
-
-// queryCollection("users", ["what does hashir do", "where does hashir study"]);
-
-// peekCollection("users");
-
-module.exports = {
-  createCollection,
-  addDocuments,
-  queryCollection,
-  peekCollection,
-};
+export { chunkCodebase, saveToVectorDb, queryCodebase };

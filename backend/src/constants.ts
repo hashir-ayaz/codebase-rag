@@ -32,4 +32,23 @@ const validExtensions: string[] = [
   ".r", // R
 ];
 
-export { validExtensions };
+const validTextSplitters = {
+  html: ".html",
+  cpp: ".cpp",
+  go: ".go",
+  java: ".java",
+  js: ".js",
+  php: ".php",
+  proto: ".proto",
+  python: ".py",
+  rst: ".rst",
+  ruby: ".rb",
+  rust: ".rs",
+  scala: ".scala",
+  swift: ".swift",
+  markdown: ".md",
+  latex: ".tex",
+  sol: ".sol",
+};
+
+export { validExtensions, validTextSplitters };
