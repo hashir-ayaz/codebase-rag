@@ -6,8 +6,8 @@ const unzipper = require("unzipper");
 const axios = require("axios");
 const { validExtensions } = require("./constants");
 
-async function downloadRepository(repoUrl: string) {
-  const localPath: string = "./cloned_codebases/codebase3_downloaded"; // Replace with desired local path
+async function downloadRepository(repoUrl: string, folderName: string) {
+  const localPath: string = `./cloned_codebases/${folderName}`; // Replace with desired local path
 
   try {
     // Extract owner and repo name from the URL
@@ -65,7 +65,8 @@ async function downloadRepository(repoUrl: string) {
  * Recursively scans the directory for code files and appends their content to all_code.txt.
  * @param {string} dirPath - The path to the repository.
  */
-async function collectCodeFiles(dirPath: string) {
+async function collectCodeFiles(dirPath: string, foldername: string) {
+  const newDirPath: string = dirPath + `./cloned_codebases/${dirPath}`; // Replace with the path to the repository
   const outputFilePath: string = path.join(dirPath, "all_code.txt");
 
   try {
@@ -101,7 +102,13 @@ async function collectCodeFiles(dirPath: string) {
   }
 }
 
-// Example usage:
-// const repoPath =
-//   "/home/hashir/Documents/codebase-rag/cloned_codebases/codebase1"; // Replace with your repository path
-// collectCodeFiles(repoPath);
+// the code is inside the directory and the filename is all_code.txt
+const chunkCodebase = async (codebasePath: string) => {
+  // load the codebase file
+  const codebase = await fs.readFile(
+    path.join(codebasePath, "all_code.txt"),
+    "utf-8"
+  );
+};
+
+export { downloadRepository, collectCodeFiles, chunkCodebase };

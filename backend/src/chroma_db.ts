@@ -1,6 +1,7 @@
 const { ChromaClient } = require("chromadb");
 const { OpenAIEmbeddingFunction } = require("chromadb");
 const dotenv = require("dotenv");
+const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
 
 dotenv.config();
 
