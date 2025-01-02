@@ -4,8 +4,11 @@ const fs = require("fs-extra");
 const path = require("path");
 const unzipper = require("unzipper");
 const axios = require("axios");
+const { validExtensions } = require("./constants");
 
-async function downloadRepository(repoUrl: string, localPath: string) {
+async function downloadRepository(repoUrl: string) {
+  const localPath: string = "./cloned_codebases/codebase3_downloaded"; // Replace with desired local path
+
   try {
     // Extract owner and repo name from the URL
     const match = repoUrl.match(/github\.com\/(.+?)\/(.+?)(\.git)?$/);
@@ -55,28 +58,14 @@ async function downloadRepository(repoUrl: string, localPath: string) {
 }
 
 // Example usage
-const repoUrl = "https://github.com/hashir-ayaz/JobProviderPanel.git"; // Replace with actual repo URL
-const localPath = "./cloned_codebases/codebase3_downloaded"; // Replace with desired local path
-downloadRepository(repoUrl, localPath);
-// cloneRepository(
-//   "https://github.com/hashir-ayaz/JobProviderPanel.git",
-//   "/home/hashir/Documents/codebase-rag/cloned_codebases/codebase2"
-// );
+// const repoUrl = "https://github.com/hashir-ayaz/JobProviderPanel.git"; // Replace with actual repo URL
+// downloadRepository(repoUrl, localPath);
 
 /**
  * Recursively scans the directory for code files and appends their content to all_code.txt.
  * @param {string} dirPath - The path to the repository.
  */
 async function collectCodeFiles(dirPath: string) {
-  const validExtensions: string[] = [
-    ".js",
-    ".ts",
-    ".py",
-    ".cpp",
-    ".c",
-    ".dart",
-    ".rs",
-  ];
   const outputFilePath: string = path.join(dirPath, "all_code.txt");
 
   try {
