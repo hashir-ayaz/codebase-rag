@@ -102,13 +102,9 @@ async function collectCodeFiles(dirPath: string, foldername: string) {
   }
 }
 
-// the code is inside the directory and the filename is all_code.txt
-const chunkCodebase = async (codebasePath: string) => {
-  // load the codebase file
-  const codebase = await fs.readFile(
-    path.join(codebasePath, "all_code.txt"),
-    "utf-8"
-  );
+const queryLlm = async (query: string, folderName: string): Promise<string> => {
+  //  query llama 3.1 with groq
+  return "response";
 };
 
-export { downloadRepository, collectCodeFiles, chunkCodebase };
+export { downloadRepository, collectCodeFiles };

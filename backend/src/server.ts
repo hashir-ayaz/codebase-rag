@@ -28,7 +28,7 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
 
     res.json({ message: "Repository downloaded and code collected." });
   } catch (error) {
-    console.error("Error downloading repository:", error);
+    console.error("Error in Embedding and saving the codebase", error);
     res.json({ error: error });
   }
 });
@@ -37,16 +37,28 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
  * this endpoint receives the query -> then embeds the query and searches the code base for the appropirate chunks -> then calls open ai api and returns a text response
  */
 app.post("/api/query", async (req: any, res: any) => {
-  const folderName = req.body.folderName;
-  // get the query
-  const query: string = req.body.query;
-  // search the code base for the most relevant chunks
-  const response_docs = await queryCodebase(query, folderName);
-  // return the response
+  try {
+    // Destructure and type variables from req.body
+    const { query, folderName }: { query: string; folderName: string } =
+      req.body;
 
-  // give the response to the openai and ask it to make a response
+    if (!query || !folderName) {
+      return res
+        .status(400)
+        .json({ error: "Missing query or folderName in request body" });
+    }
+    // Search the codebase for the most relevant chunks
+    const responseDocs = await queryCodebase(query, folderName);
 
-  res.json({ response: response_docs });
+    // Return the response
+    res.json({ response: responseDocs });
+  } catch (error) {
+    console.error("Error processing query:", error);
+
+    if (error instanceof Error) {
+      res.json({ error: error.message });
+    }
+  }
 });
 
 app.listen(port, () => {

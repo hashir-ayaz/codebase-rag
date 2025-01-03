@@ -19,34 +19,57 @@ const embedder = new OpenAIEmbeddingFunction({
 
 // TODO make the js generic
 const chunkCodebase = async (localPath: string) => {
-  const textSplitter = new RecursiveCharacterTextSplitter().fromLanguage("js", {
-    chunkSize: 60,
-    overlap: 0,
-  });
+  try {
+    const textSplitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
+      chunkSize: 300,
+      chunkOverlap: 0,
+    });
 
-  // load the codebase file (all_code.txt)
-  const codebase = await fs.readFile(
-    path.join(localPath, "/all_code.txt"),
-    "utf-8"
-  );
+    // load the codebase file (all_code.txt)
+    const codebase = await fs.readFile(
+      path.join(localPath, "/all_code.txt"),
+      "utf-8"
+    );
 
-  const docs = await textSplitter.createDocuments([codebase]);
-  console.log(docs);
-  return docs;
+    const docs = await textSplitter.createDocuments([codebase]);
+    console.log(docs);
+    return docs;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error chunking codebase: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    } else {
+      console.error(
+        `An unexpected error occurred while chunking codebase: ${error}`
+      );
+    }
+    throw error; // Re-throw the error for the calling code to handle if necessary
+  }
 };
 
 const saveToVectorDb = async (folderName: string, docs: object) => {
-  // get collection
-  const collection = await client.getOrCreateCollection({
-    name: folderName,
-    embeddingFunction: embedder,
-  });
+  try {
+    // get collection
+    const collection = await client.getOrCreateCollection({
+      name: folderName,
+      embeddingFunction: embedder,
+    });
 
-  await collection.add(docs);
-
-  // display the data
-  const peekedData = await collection.peek();
-  console.log(peekedData);
+    console.log("docs in saveToVectorDb", docs);
+    await collection.add(docs);
+    console.log("Data saved to vector database");
+    // display the data
+    const peekedData = await collection.peek();
+    console.log(peekedData);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error saving to vector database: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    } else {
+      console.error(`An unexpected error occurred: ${error}`);
+    }
+    throw error; // Re-throw the error if you want calling code to handle it
+  }
 };
 
 const queryCodebase = async (query: string, folderName: string) => {
