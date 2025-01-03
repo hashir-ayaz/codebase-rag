@@ -1,4 +1,5 @@
-const { ChatPromptTemplate } = require("@langchain/core/prompts");
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+
 const validExtensions: string[] = [
   ".js", // JavaScript
   ".ts", // TypeScript

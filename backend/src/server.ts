@@ -1,7 +1,7 @@
-const { chunkCodebase, saveToVectorDb, queryCodebase } = require("./chroma_db");
-const { generateNameForCodeFolder } = require("./utils");
-const { downloadRepository, collectCodeFiles } = require("./code_service");
-const express = require("express");
+import { chunkCodebase, saveToVectorDb, queryCodebase } from "./chroma_db.js";
+import { generateNameForCodeFolder } from "./utils.js";
+import { downloadRepository, collectCodeFiles } from "./code_service.js";
+import express from "express";
 const app = express();
 const port = 3000;
 app.use(express.json());
@@ -18,7 +18,7 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
 
     // using the repo url to make a name for the local path to store the code at
     const localPath = `./cloned_codebases/${folderName}`;
-    await collectCodeFiles(localPath);
+    await collectCodeFiles(localPath, folderName);
 
     // chunk the code base
     const docs = await chunkCodebase(localPath);

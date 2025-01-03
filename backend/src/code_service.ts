@@ -1,10 +1,12 @@
-const simpleGit = require("simple-git");
+import simpleGit from "simple-git";
+import { promises as fsPromises } from "node:fs";
+import fs from "fs-extra";
+import path from "path";
+import unzipper from "unzipper";
+import axios from "axios";
+import { validExtensions } from "./constants.js";
+
 const git = simpleGit();
-const fs = require("fs-extra");
-const path = require("path");
-const unzipper = require("unzipper");
-const axios = require("axios");
-const { validExtensions } = require("./constants");
 
 async function downloadRepository(repoUrl: string, folderName: string) {
   const localPath: string = `./cloned_codebases/${folderName}`; // Replace with desired local path
@@ -66,15 +68,17 @@ async function downloadRepository(repoUrl: string, folderName: string) {
  * @param {string} dirPath - The path to the repository.
  */
 async function collectCodeFiles(dirPath: string, foldername: string) {
-  const newDirPath: string = dirPath + `./cloned_codebases/${dirPath}`; // Replace with the path to the repository
-  const outputFilePath: string = path.join(dirPath, "all_code.txt");
+  const newDirPath: string = dirPath + `./cloned_codebases/${foldername}`; // Replace with the path to the repository
+  const outputFilePath: string = path.join(newDirPath, "/all_code.txt");
 
   try {
     // Ensure the output file exists and is empty
     await fs.writeFile(outputFilePath, "", "utf8");
 
     async function processDirectory(currentPath: string) {
-      const entries = await fs.readdir(currentPath, { withFileTypes: true });
+      const entries = await fsPromises.readdir(currentPath, {
+        withFileTypes: true,
+      });
 
       for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name);
@@ -84,7 +88,7 @@ async function collectCodeFiles(dirPath: string, foldername: string) {
           await processDirectory(fullPath);
         } else if (validExtensions.includes(path.extname(entry.name))) {
           // Append the content of valid code files
-          const codeContent = await fs.readFile(fullPath, "utf8");
+          const codeContent = await fsPromises.readFile(fullPath, "utf8");
           await fs.appendFile(
             outputFilePath,
             `\n\n// File: ${fullPath}\n\n` + codeContent
