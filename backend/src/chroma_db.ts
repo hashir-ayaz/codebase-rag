@@ -32,7 +32,7 @@ const chunkCodebase = async (localPath: string) => {
     );
 
     const docs = await textSplitter.createDocuments([codebase]);
-    console.log(docs);
+    // console.log(docs);
     return docs;
   } catch (error) {
     if (error instanceof Error) {
@@ -56,13 +56,14 @@ const saveToVectorDb = async (folderName: string, docs: object) => {
     });
 
     console.log("docs in saveToVectorDb", docs);
-    await collection.add(docs);
+    await collection.upsert({ documents: docs });
     console.log("Data saved to vector database");
     // display the data
-    const peekedData = await collection.peek();
-    console.log(peekedData);
+    // const peekedData = await collection.peek();
+    // console.log(peekedData);
   } catch (error) {
     if (error instanceof Error) {
+      // FIXME there is an erorr here
       console.error(`Error saving to vector database: ${error.message}`);
       console.error(`Stack trace: ${error.stack}`);
     } else {
