@@ -68,8 +68,8 @@ async function downloadRepository(repoUrl: string, folderName: string) {
  * @param {string} dirPath - The path to the repository.
  */
 async function collectCodeFiles(dirPath: string, foldername: string) {
-  const newDirPath: string = dirPath + `./cloned_codebases/${foldername}`; // Replace with the path to the repository
-  const outputFilePath: string = path.join(newDirPath, "/all_code.txt");
+  // Replace with the path to the repository
+  const outputFilePath: string = path.join(dirPath, "/all_code.txt");
 
   try {
     // Ensure the output file exists and is empty
