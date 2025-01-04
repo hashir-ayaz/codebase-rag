@@ -57,14 +57,14 @@ export default function ChatInterface() {
   return (
     <Card className="w-full">
       <CardContent className="p-4">
-        <div className="space-y-4 mb-4 h-[400px] whitespace-pre-wrap overflow-y-auto">
+        <div className="space-y-4 mb-4 h-screen whitespace-pre-wrap overflow-y-auto my-2">
           {messages.map((message, index) => (
             <div
               key={index}
               className={`p-2 rounded-lg ${
                 message.role === "user"
-                  ? "bg-gray-100 text-right"
-                  : "bg-gray-200"
+                  ? "bg-black text-white text-right"
+                  : "bg-gray-100 "
               }`}
             >
               {message.content}
