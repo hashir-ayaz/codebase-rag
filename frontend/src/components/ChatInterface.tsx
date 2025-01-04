@@ -22,20 +22,26 @@ export default function ChatInterface() {
     setInput("");
     setIsLoading(true);
 
+    const folderName = localStorage.getItem("folderName");
+    if (folderName === null) {
+      console.error("folderName is null");
+      return;
+    }
+
     try {
-      const response = await fetch("/api/ask", {
+      const response = await fetch("http://localhost:3000/api/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: input }),
+        body: JSON.stringify({ query: input, folderName }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const assistantMessage: Message = {
           role: "assistant",
-          content: data.answer,
+          content: data.message,
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
@@ -51,7 +57,7 @@ export default function ChatInterface() {
   return (
     <Card className="w-full">
       <CardContent className="p-4">
-        <div className="space-y-4 mb-4 h-[400px] overflow-y-auto">
+        <div className="space-y-4 mb-4 h-[400px] whitespace-pre-wrap overflow-y-auto">
           {messages.map((message, index) => (
             <div
               key={index}

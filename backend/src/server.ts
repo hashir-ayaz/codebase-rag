@@ -9,6 +9,15 @@ import { downloadRepository, collectCodeFiles } from "./code_service.js";
 import express from "express";
 const app = express();
 const port = 3000;
+import cors from "cors";
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 /**
@@ -31,10 +40,15 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
     console.log("chunking codebase done");
     await saveToVectorDb(folderName, docs);
 
-    res.json({ message: "Repository downloaded and code collected." });
+    res
+      .json({
+        message: "Repository downloaded and code collected.",
+        folderName,
+      })
+      .status(200);
   } catch (error) {
     console.error("Error in Embedding and saving the codebase", error);
-    res.json({ error: error });
+    res.json({ error: error }).status(500);
   }
 });
 
@@ -48,7 +62,7 @@ app.post("/api/query", async (req: any, res: any) => {
     const retrievedDocs = await retrieveFromVectorDb(query, folderName);
 
     const response = await queryLLM(query, folderName, retrievedDocs);
-    res.json(response);
+    res.json({ message: response });
   } catch (error) {
     console.error("Error in querying the codebase", error);
     res.json({ error: error });

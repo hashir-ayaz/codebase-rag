@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,12 @@ export default function RepoForm() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/submit-repo", {
+      const response = await fetch("http://localhost:3000/api/embed-codebase", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -21,7 +21,17 @@ export default function RepoForm() {
         body: JSON.stringify({ repoUrl }),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
+        console.log("success -> navigating to chat");
+
+        const data = await response.json();
+        console.log("data is ", data);
+        // save the folder name in local storage
+        if (data.folderName === undefined) {
+          throw new Error("folderName is undefined");
+        }
+        localStorage.setItem("folderName", data.folderName);
+
         navigate("/chat");
       } else {
         console.error("Failed to submit repo");
