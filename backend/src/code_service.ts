@@ -106,9 +106,70 @@ async function collectCodeFiles(dirPath: string, foldername: string) {
   }
 }
 
-const queryLlm = async (query: string, folderName: string): Promise<string> => {
-  //  query llama 3.1 with groq
-  return "response";
+interface DirectoryStructure {
+  name: string;
+  type: "file" | "folder";
+  children?: DirectoryStructure[];
+}
+
+const generateDirectoryStructure = async (
+  folderName: string,
+  depth: number = 0
+): Promise<DirectoryStructure | null> => {
+  if (depth > 3) {
+    return null; // Stop recursion if depth exceeds 3 levels
+  }
+
+  const localPath: string = path.resolve(`./cloned_codebases/${folderName}`); // Resolve the path
+
+  try {
+    const stats = await fs.stat(localPath);
+
+    if (!stats.isDirectory()) {
+      throw new Error(`${folderName} is not a directory.`);
+    }
+
+    const structure: DirectoryStructure = {
+      name: path.basename(localPath),
+      type: "folder",
+      children: [],
+    };
+
+    const items = await fs.readdir(localPath);
+
+    for (const item of items) {
+      const itemPath = path.join(localPath, item);
+      const itemStats = await fs.stat(itemPath);
+
+      if (itemStats.isDirectory()) {
+        const childStructure = await generateDirectoryStructure(
+          path.join(folderName, item),
+          depth + 1
+        );
+        if (childStructure) {
+          structure.children?.push(childStructure);
+        }
+      } else {
+        structure.children?.push({
+          name: item,
+          type: "file",
+        });
+      }
+    }
+
+    return structure;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error generating directory structure: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    } else {
+      console.error(
+        `An unexpected error occurred while generating directory structure: ${error}`
+      );
+    }
+
+    return null;
+  }
 };
 
-export { downloadRepository, collectCodeFiles };
+export { downloadRepository, collectCodeFiles, generateDirectoryStructure };
