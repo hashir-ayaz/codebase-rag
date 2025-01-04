@@ -53,7 +53,7 @@ const validTextSplitters = {
   sol: ".sol",
 };
 
-const systemPrompt = ChatPromptTemplate.fromMessages([
+const groqPrompt = ChatPromptTemplate.fromMessages([
   [
     "system",
     `You are an expert programming assistant. Your task is to provide accurate and helpful responses to coding questions based on the given context. 
@@ -65,4 +65,4 @@ const systemPrompt = ChatPromptTemplate.fromMessages([
   ["user", "Answer the following question: {question}"],
 ]);
 
-export { validExtensions, validTextSplitters, systemPrompt };
+export { validExtensions, validTextSplitters, groqPrompt };

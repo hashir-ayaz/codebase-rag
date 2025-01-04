@@ -4,11 +4,13 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { config } from "dotenv";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { promises as fs } from "fs";
-import { generateUUID } from "./utils";
+import { generateUUID } from "./utils.js";
 import type { Document } from "@langchain/core/documents";
 import path from "path";
 import { TextLoader } from "langchain/document_loaders/fs/text";
-
+import { ChatGroq } from "@langchain/groq";
+import { groqPrompt } from "./constants.js";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 config();
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -25,7 +27,7 @@ const embeddings = new OpenAIEmbeddings({
 const chunkCodebase = async (localPath: string) => {
   try {
     const textSplitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
-      chunkSize: 200,
+      chunkSize: 400,
       chunkOverlap: 0,
     });
 
@@ -34,7 +36,7 @@ const chunkCodebase = async (localPath: string) => {
     const docs: Document[] = await loader.load();
 
     // split the codebase into chunks
-    const chunks = await textSplitter.splitDocuments(docs);
+    const chunks: Document[] = await textSplitter.splitDocuments(docs);
 
     console.log("chunks", chunks);
     // console.log(docs);
@@ -52,62 +54,83 @@ const chunkCodebase = async (localPath: string) => {
   }
 };
 
-// const saveToVectorDb = async (folderName: string, docs: Array<Document>) => {
-//   try {
-//     // Get or create the collection
-//     // const collection = await client.getOrCreateCollection({
-//     //   name: folderName,
-//     // });
+const saveToVectorDb = async (folderName: string, docs: Document[]) => {
+  try {
+    // create vector store
+    const vectorStore = new Chroma(embeddings, {
+      collectionName: folderName,
+      url: "http://localhost:8001", // Optional, will default to this value
+      collectionMetadata: {
+        "hnsw:space": "cosine",
+      }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
+    });
+    console.log("vector store created!");
+    // add docs to vector store
+    await vectorStore.addDocuments(docs, {
+      ids: docs.map((doc) => generateUUID()),
+    });
+    console.log("docs added to vector store!");
 
-//     console.log("docs in saveToVectorDb", docs);
+    return docs;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error creating vector store: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    } else {
+      console.error(
+        `An unexpected error occurred while creating vector store: ${error}`
+      );
+    }
+    throw error; // Re-throw the error for the calling code to handle if necessary
+  }
+};
 
-//     // Filter valid documents
-//     const validDocs = docs.filter(
-//       (doc) => doc.pageContent && doc.pageContent.length < 0
-//     );
+const retrieveFromVectorDb = async (query: string, folderName: string) => {
+  // get the vector store
+  const vectorStore = new Chroma(embeddings, {
+    collectionName: folderName,
+    url: "http://localhost:8001", // Optional, will default to this value
+    collectionMetadata: {
+      "hnsw:space": "cosine",
+    }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
+  });
+  console.log("vector store created!");
 
-//     // Extract documents, metadatas, and generate IDs
-//     const documents: string[] = validDocs.map((doc) => doc.pageContent);
-//     const metadatas = validDocs.map((doc) => doc.metadata || {});
-//     const ids = validDocs.map((doc) => doc.id || generateUUID());
-//     // const embeddings = await embedder.embed(documents);
+  // const filter = { source: "https://example.com" };
 
-//     console.log("Documents:", documents);
-//     console.log("Metadatas:", metadatas);
-//     console.log("IDs:", ids);
+  const similaritySearchResults = await vectorStore.similaritySearch(query, 10);
 
-//     // Upsert data into the collection
-//     // await collection.upsert({
-//     //   documents,
-//     //   metadatas,
-//     //   ids,
-//     //   embeddings,
-//     // });
+  for (const doc of similaritySearchResults) {
+    console.log(`* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`);
+  }
 
-//     console.log("Data saved to vector database");
-//   } catch (error) {
-//     if (error instanceof Error) {
-//       console.error(`Error saving to vector database: ${error.message}`);
-//       console.error(`Stack trace: ${error.stack}`);
-//     } else {
-//       console.error(`An unexpected error occurred: ${error}`);
-//     }
-//     throw error; // Re-throw the error for the caller to handle it
-//   }
-// };
+  return similaritySearchResults;
+};
 
-// const queryCodebase = async (query: string, folderName: string) => {
-// get collection
-// const collection = await client.getOrCreateCollection({
-//   name: folderName,
-//   embeddingFunction: embedder,
-// });
-// const response = await collection.query({
-//   queryTexts: [query],
-//   nResults: 5,
-// });
-// console.log(response);
-// return response;
-// };
+const queryLLM = async (
+  query: string,
+  folderName: string,
+  retrievedDocs: any
+) => {
+  //  query llama 3.1 with groq
+  const llm = new ChatGroq({
+    model: "llama-3.1-70b-versatile",
+    temperature: 0,
+    maxTokens: undefined,
+    maxRetries: 2,
+    apiKey: process.env.GROQ_API_KEY,
+  });
 
-export { chunkCodebase };
+  const prompt = groqPrompt;
+
+  const chain = prompt.pipe(llm);
+
+  const response = await chain.invoke({
+    question: query,
+    context: retrievedDocs,
+  });
+
+  return response.content;
+};
+
+export { chunkCodebase, saveToVectorDb, retrieveFromVectorDb, queryLLM };

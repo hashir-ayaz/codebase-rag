@@ -1,4 +1,9 @@
-import { chunkCodebase } from "./chroma_db.js";
+import {
+  chunkCodebase,
+  saveToVectorDb,
+  retrieveFromVectorDb,
+  queryLLM,
+} from "./chroma_db.js";
 import { generateNameForCodeFolder } from "./utils.js";
 import { downloadRepository, collectCodeFiles } from "./code_service.js";
 import express from "express";
@@ -24,7 +29,7 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
     const docs = await chunkCodebase(localPath);
     // store the codebase in the chroma db
     console.log("chunking codebase done");
-    // await saveToVectorDb(folderName, docs);
+    await saveToVectorDb(folderName, docs);
 
     res.json({ message: "Repository downloaded and code collected." });
   } catch (error) {
@@ -36,30 +41,23 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
 /**
  * this endpoint receives the query -> then embeds the query and searches the code base for the appropirate chunks -> then calls open ai api and returns a text response
  */
-// app.post("/api/query", async (req: any, res: any) => {
-//   try {
-//     // Destructure and type variables from req.body
-//     const { query, folderName }: { query: string; folderName: string } =
-//       req.body;
+app.post("/api/query", async (req: any, res: any) => {
+  try {
+    const query: string = req.body.query;
+    const folderName: string = req.body.folderName;
+    const retrievedDocs = await retrieveFromVectorDb(query, folderName);
 
-//     if (!query || !folderName) {
-//       return res
-//         .status(400)
-//         .json({ error: "Missing query or folderName in request body" });
-//     }
-//     // Search the codebase for the most relevant chunks
-//     const responseDocs = await queryCodebase(query, folderName);
+    const response = await queryLLM(query, folderName, retrievedDocs);
+    res.json(response);
+  } catch (error) {
+    console.error("Error in querying the codebase", error);
+    res.json({ error: error });
+  }
+});
 
-//     // Return the response
-//     res.json({ response: responseDocs });
-//   } catch (error) {
-//     console.error("Error processing query:", error);
-
-//     if (error instanceof Error) {
-//       res.json({ error: error.message });
-//     }
-//   }
-// });
+app.all("*", (req: any, res: any) => {
+  res.status(404).json({ error: "Not found" });
+});
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
