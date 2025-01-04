@@ -110,7 +110,8 @@ const retrieveFromVectorDb = async (query: string, folderName: string) => {
 const queryLLM = async (
   query: string,
   folderName: string,
-  retrievedDocs: any
+  retrievedDocs: any,
+  directoryStructure: any
 ) => {
   //  query llama 3.1 with groq
   const llm = new ChatGroq({
@@ -128,6 +129,7 @@ const queryLLM = async (
   const response = await chain.invoke({
     question: query,
     context: retrievedDocs,
+    directoryStructure,
   });
 
   return response.content;

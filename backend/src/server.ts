@@ -5,7 +5,11 @@ import {
   queryLLM,
 } from "./chroma_db.js";
 import { generateNameForCodeFolder } from "./utils.js";
-import { downloadRepository, collectCodeFiles } from "./code_service.js";
+import {
+  downloadRepository,
+  collectCodeFiles,
+  generateDirectoryStructure,
+} from "./code_service.js";
 import express from "express";
 const app = express();
 const port = 3000;
@@ -52,6 +56,11 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
   }
 });
 
+interface DirectoryStructure {
+  name: string;
+  type: "file" | "folder";
+  children?: DirectoryStructure[];
+}
 /**
  * this endpoint receives the query -> then embeds the query and searches the code base for the appropirate chunks -> then calls open ai api and returns a text response
  */
@@ -61,7 +70,15 @@ app.post("/api/query", async (req: any, res: any) => {
     const folderName: string = req.body.folderName;
     const retrievedDocs = await retrieveFromVectorDb(query, folderName);
 
-    const response = await queryLLM(query, folderName, retrievedDocs);
+    const directoryStructure = await generateDirectoryStructure(folderName);
+    console.log("directoryStructure is ", directoryStructure);
+
+    const response = await queryLLM(
+      query,
+      folderName,
+      retrievedDocs,
+      directoryStructure
+    );
     res.json({ message: response });
   } catch (error) {
     console.error("Error in querying the codebase", error);
