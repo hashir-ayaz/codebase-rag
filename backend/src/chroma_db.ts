@@ -27,7 +27,7 @@ const embeddings = new OpenAIEmbeddings({
 const chunkCodebase = async (localPath: string) => {
   try {
     const textSplitter = RecursiveCharacterTextSplitter.fromLanguage("js", {
-      chunkSize: 400,
+      chunkSize: 1000,
       chunkOverlap: 0,
     });
 
@@ -111,7 +111,8 @@ const queryLLM = async (
   query: string,
   folderName: string,
   retrievedDocs: any,
-  directoryStructure: any
+  directoryStructure: any,
+  readmeContent: string
 ) => {
   //  query llama 3.1 with groq
   const llm = new ChatGroq({
@@ -130,6 +131,7 @@ const queryLLM = async (
     question: query,
     context: retrievedDocs,
     directoryStructure,
+    readmeContent,
   });
 
   return response.content;

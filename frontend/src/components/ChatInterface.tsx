@@ -55,34 +55,37 @@ export default function ChatInterface() {
   };
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-4">
-        <div className="space-y-4 mb-4 h-screen whitespace-pre-wrap overflow-y-auto my-2">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`p-2 rounded-lg ${
-                message.role === "user"
-                  ? "bg-black text-white text-right"
-                  : "bg-gray-100 "
-              }`}
-            >
-              {message.content}
-            </div>
-          ))}
-        </div>
-        <form onSubmit={handleSubmit} className="flex space-x-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question about the codebase..."
-            className="flex-grow"
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Thinking..." : "Ask"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <div>
+      <h1>Chat with the codebase</h1>
+      <Card className="w-full">
+        <CardContent className="p-4">
+          <div className="overflow-y-auto my-2 mb-4 space-y-4 h-96 whitespace-pre-wrap">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`p-2 rounded-lg ${
+                  message.role === "user"
+                    ? "bg-black text-white text-right"
+                    : "bg-gray-100 "
+                }`}
+              >
+                {message.content}
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleSubmit} className="flex space-x-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask a question about the codebase..."
+              className="flex-grow"
+            />
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Thinking..." : "Ask"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

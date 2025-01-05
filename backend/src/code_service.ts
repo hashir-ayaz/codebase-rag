@@ -5,150 +5,221 @@ import path from "path";
 import unzipper from "unzipper";
 import axios from "axios";
 import { validExtensions } from "./constants.js";
+import { ChatGroq } from "@langchain/groq";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 
+// Initialize Git
 const git = simpleGit();
 
-async function downloadRepository(repoUrl: string, folderName: string) {
-  const localPath: string = `./cloned_codebases/${folderName}`; // Replace with desired local path
-
-  try {
-    // Extract owner and repo name from the URL
-    const match = repoUrl.match(/github\.com\/(.+?)\/(.+?)(\.git)?$/);
-    if (!match) {
-      throw new Error("Invalid GitHub repository URL.");
-    }
-
-    const [_, owner, repo] = match;
-
-    // Construct GitHub API URL for downloading as ZIP
-    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
-
-    console.log(`Downloading repository from: ${zipUrl}`);
-
-    // Download the ZIP file
-    const response = await axios({
-      url: zipUrl,
-      method: "GET",
-      responseType: "stream",
-    });
-
-    const zipPath = path.join(localPath, `${repo}.zip`);
-    await fs.ensureDir(localPath);
-
-    // Save the ZIP file
-    const writer = fs.createWriteStream(zipPath);
-    response.data.pipe(writer);
-
-    await new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-    });
-
-    console.log("Repository downloaded. Extracting...");
-
-    // Extract the ZIP file
-    await fs
-      .createReadStream(zipPath)
-      .pipe(unzipper.Extract({ path: localPath }))
-      .promise();
-
-    console.log(`Repository extracted to ${localPath}`);
-    await fs.remove(zipPath); // Clean up ZIP file
-  } catch (error) {
-    console.error("Error downloading repository:", error);
-  }
-}
-
-// Example usage
-// const repoUrl = "https://github.com/hashir-ayaz/JobProviderPanel.git"; // Replace with actual repo URL
-// downloadRepository(repoUrl, localPath);
-
-/**
- * Recursively scans the directory for code files and appends their content to all_code.txt.
- * @param {string} dirPath - The path to the repository.
- */
-async function collectCodeFiles(dirPath: string, foldername: string) {
-  // Replace with the path to the repository
-  const outputFilePath: string = path.join(dirPath, "/all_code.txt");
-
-  try {
-    // Ensure the output file exists and is empty
-    await fs.writeFile(outputFilePath, "", "utf8");
-
-    async function processDirectory(currentPath: string) {
-      const entries = await fsPromises.readdir(currentPath, {
-        withFileTypes: true,
-      });
-
-      for (const entry of entries) {
-        const fullPath = path.join(currentPath, entry.name);
-
-        if (entry.isDirectory()) {
-          // Recursively process subdirectories
-          await processDirectory(fullPath);
-        } else if (validExtensions.includes(path.extname(entry.name))) {
-          // Append the content of valid code files
-          const codeContent = await fsPromises.readFile(fullPath, "utf8");
-          await fs.appendFile(
-            outputFilePath,
-            `\n\n// File: ${fullPath}\n\n` + codeContent
-          );
-          console.log(`Added content from: ${fullPath}`);
-        }
-      }
-    }
-
-    // Start processing from the given directory
-    await processDirectory(dirPath);
-    console.log(`All code files have been aggregated into: ${outputFilePath}`);
-  } catch (error) {
-    console.error("Error while collecting code files:", error);
-  }
-}
-
+// Types
 interface DirectoryStructure {
   name: string;
   type: "file" | "folder";
   children?: DirectoryStructure[];
 }
 
-const generateDirectoryStructure = async (
-  folderName: string,
-  depth: number = 0
-): Promise<DirectoryStructure | null> => {
-  if (depth > 3) {
-    return null; // Stop recursion if depth exceeds 3 levels
-  }
+// Utilities for Repository Downloading
 
-  const localPath: string = path.resolve(`./cloned_codebases/${folderName}`); // Resolve the path
+/**
+ * Parses a GitHub repository URL and extracts the owner and repository name.
+ * @param {string} repoUrl - The GitHub repository URL.
+ * @returns {{ owner: string; repo: string }} - The owner and repository name.
+ * @throws Will throw an error if the URL is invalid.
+ */
+const parseRepoUrl = (repoUrl: string): { owner: string; repo: string } => {
+  try {
+    const match = repoUrl.match(/github\.com\/(.+?)\/(.+?)(\.git)?$/);
+    if (!match) {
+      throw new Error("Invalid GitHub repository URL.");
+    }
+    return { owner: match[1], repo: match[2] };
+  } catch (error) {
+    console.error("Error parsing repository URL:", error);
+    throw error;
+  }
+};
+
+/**
+ * Downloads a ZIP file from the provided URL and saves it to the specified path.
+ * @param {string} zipUrl - The URL of the ZIP file to download.
+ * @param {string} zipPath - The local file path to save the downloaded ZIP.
+ * @throws Will throw an error if the download fails.
+ */
+const downloadZip = async (zipUrl: string, zipPath: string) => {
+  try {
+    const response = await axios({
+      url: zipUrl,
+      method: "GET",
+      responseType: "stream",
+    });
+
+    const writer = fs.createWriteStream(zipPath);
+    response.data.pipe(writer);
+
+    await new Promise<void>((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+    });
+
+    console.log("ZIP file downloaded.");
+  } catch (error) {
+    console.error("Error downloading ZIP file:", error);
+    throw error;
+  }
+};
+
+/**
+ * Extracts a ZIP file to the specified local path and removes the ZIP file afterward.
+ * @param {string} zipPath - The path to the ZIP file.
+ * @param {string} localPath - The directory to extract the ZIP contents into.
+ * @throws Will throw an error if extraction fails.
+ */
+const extractZip = async (zipPath: string, localPath: string) => {
+  try {
+    await fs
+      .createReadStream(zipPath)
+      .pipe(unzipper.Extract({ path: localPath }))
+      .promise();
+
+    console.log("ZIP file extracted.");
+    await fs.remove(zipPath); // Clean up ZIP file
+  } catch (error) {
+    console.error("Error extracting ZIP file:", error);
+    throw error;
+  }
+};
+
+/**
+ * Downloads a GitHub repository by cloning its ZIP archive, extracting it, and saving it locally.
+ * @param {string} repoUrl - The GitHub repository URL.
+ * @param {string} folderName - The local folder name to save the repository.
+ */
+const downloadRepository = async (repoUrl: string, folderName: string) => {
+  const localPath = `./cloned_codebases/${folderName}`;
 
   try {
-    const stats = await fs.stat(localPath);
+    const { owner, repo } = parseRepoUrl(repoUrl);
+    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
+    const zipPath = path.join(localPath, `${repo}.zip`);
 
-    if (!stats.isDirectory()) {
-      throw new Error(`${folderName} is not a directory.`);
+    console.log(`Downloading repository from: ${zipUrl}`);
+
+    await fs.ensureDir(localPath);
+    await downloadZip(zipUrl, zipPath);
+    await extractZip(zipPath, localPath);
+
+    console.log(`Repository extracted to: ${localPath}`);
+  } catch (error) {
+    console.error("Error downloading repository:", error);
+    // Optionally rethrow if you want the caller to handle it
+    // throw error;
+  }
+};
+
+// Utilities for File Collection
+
+/**
+ * Processes a single file by reading its content and appending it to the output file.
+ * @param {string} filePath - The path to the file to process.
+ * @param {string} outputFilePath - The path to the output file.
+ */
+const processFile = async (filePath: string, outputFilePath: string) => {
+  try {
+    const codeContent = await fsPromises.readFile(filePath, "utf8");
+    await fs.appendFile(
+      outputFilePath,
+      `\n\n// File: ${filePath}\n\n` + codeContent
+    );
+    console.log(`Added content from: ${filePath}`);
+  } catch (error) {
+    console.error(`Error processing file (${filePath}):`, error);
+    throw error;
+  }
+};
+
+/**
+ * Recursively processes a directory, handling subdirectories and valid files.
+ * @param {string} currentPath - The current directory path to process.
+ * @param {string} outputFilePath - The path to the output file.
+ */
+const processDirectory = async (
+  currentPath: string,
+  outputFilePath: string
+) => {
+  try {
+    const entries = await fsPromises.readdir(currentPath, {
+      withFileTypes: true,
+    });
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentPath, entry.name);
+
+      if (entry.isDirectory()) {
+        await processDirectory(fullPath, outputFilePath);
+      } else if (validExtensions.includes(path.extname(entry.name))) {
+        await processFile(fullPath, outputFilePath);
+      }
     }
+  } catch (error) {
+    console.error(`Error processing directory (${currentPath}):`, error);
+    throw error;
+  }
+};
+
+/**
+ * Collects all code files from a directory and aggregates their content into a single file.
+ * @param {string} dirPath - The path to the directory to collect code files from.
+ */
+const collectCodeFiles = async (dirPath: string) => {
+  const outputFilePath = path.join(dirPath, "/all_code.txt");
+
+  try {
+    await fs.writeFile(outputFilePath, "", "utf8"); // Ensure the file exists and is empty
+    await processDirectory(dirPath, outputFilePath);
+    console.log(`All code files aggregated into: ${outputFilePath}`);
+  } catch (error) {
+    console.error("Error while collecting code files:", error);
+    // Optionally rethrow if you want the caller to handle it
+    // throw error;
+  }
+};
+
+// Utilities for Directory Structure
+
+/**
+ * Recursively generates the directory structure up to a specified depth.
+ * @param {string} folderPath - The path to the current folder.
+ * @param {number} depth - The current recursion depth.
+ * @returns {Promise<DirectoryStructure | null>} - The directory structure or null if depth exceeds.
+ */
+const generateFolderStructure = async (
+  folderPath: string,
+  depth: number
+): Promise<DirectoryStructure | null> => {
+  try {
+    if (depth > 3) return null;
+
+    const stats = await fs.stat(folderPath);
+    if (!stats.isDirectory())
+      throw new Error(`${folderPath} is not a directory.`);
 
     const structure: DirectoryStructure = {
-      name: path.basename(localPath),
+      name: path.basename(folderPath),
       type: "folder",
       children: [],
     };
 
-    const items = await fs.readdir(localPath);
-
+    const items = await fs.readdir(folderPath);
     for (const item of items) {
-      const itemPath = path.join(localPath, item);
+      const itemPath = path.join(folderPath, item);
       const itemStats = await fs.stat(itemPath);
 
       if (itemStats.isDirectory()) {
-        const childStructure = await generateDirectoryStructure(
-          path.join(folderName, item),
+        const childStructure = await generateFolderStructure(
+          itemPath,
           depth + 1
         );
-        if (childStructure) {
-          structure.children?.push(childStructure);
-        }
+        if (childStructure) structure.children?.push(childStructure);
       } else {
         structure.children?.push({
           name: item,
@@ -159,17 +230,124 @@ const generateDirectoryStructure = async (
 
     return structure;
   } catch (error) {
-    if (error instanceof Error) {
-      console.error(`Error generating directory structure: ${error.message}`);
-      console.error(`Stack trace: ${error.stack}`);
-    } else {
-      console.error(
-        `An unexpected error occurred while generating directory structure: ${error}`
-      );
-    }
-
+    console.error(`Error generating folder structure (${folderPath}):`, error);
     return null;
   }
 };
 
-export { downloadRepository, collectCodeFiles, generateDirectoryStructure };
+/**
+ * Generates the directory structure for a given folder name.
+ * @param {string} folderName - The name of the folder.
+ * @param {number} [depth=0] - The current recursion depth.
+ * @returns {Promise<DirectoryStructure | null>} - The directory structure or null if an error occurs.
+ */
+const generateDirectoryStructure = async (
+  folderName: string,
+  depth: number = 0
+): Promise<DirectoryStructure | null> => {
+  const localPath = path.resolve(`./cloned_codebases/${folderName}`);
+  try {
+    return await generateFolderStructure(localPath, depth);
+  } catch (error) {
+    if (error instanceof Error)
+      console.error(`Error generating directory structure: ${error.message}`);
+    else
+      console.error(
+        `Unexpected error generating directory structure: ${error}`
+      );
+    return null;
+  }
+};
+
+// Utilities for README Summarization
+
+/**
+ * Recursively searches for a README.md file within a folder.
+ * @param {string} folderName - The path to the folder to search within.
+ * @returns {Promise<string | null>} - The path to the README.md file or null if not found.
+ */
+const findReadmeFile = async (currentPath: string): Promise<string | null> => {
+  try {
+    const entries = await fs.readdir(currentPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentPath, entry.name);
+
+      if (entry.isDirectory()) {
+        const result = await findReadmeFile(fullPath);
+        if (result) return result;
+      } else if (entry.isFile() && entry.name.toLowerCase() === "readme.md") {
+        return fullPath;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error finding README file in (${currentPath}):`, error);
+    throw error;
+  }
+};
+
+/**
+ * Summarizes the content of the README.md file within a given folder.
+ * @param {string} folderName - The name of the folder containing the README.md file.
+ * @returns {Promise<string>} - The summary of the README or an appropriate message if not found or an error occurs.
+ */
+const summarizeReadme = async (folderName: string): Promise<string> => {
+  const basePath = `./cloned_codebases/${folderName}`;
+  try {
+    const readmePath = await findReadmeFile(basePath);
+    if (!readmePath) {
+      console.warn("No README.md file found.");
+      return "no readme found";
+    }
+
+    const readmeContent = await fs.readFile(readmePath, "utf8");
+
+    // Initialize the LLM for summarization
+    const llm = new ChatGroq({
+      model: "llama-3.1-70b-versatile",
+      temperature: 0,
+      maxTokens: undefined,
+      maxRetries: 2,
+      apiKey: process.env.GROQ_API_KEY,
+    });
+
+    // Define the prompt template
+    const prompt = ChatPromptTemplate.fromMessages([
+      [
+        "system",
+        "You are an expert software engineer. I will provide you with the content of a readme file, and you will provide me with a summary of the file. Describe what the project does, from a high-level and technical perspective.",
+      ],
+      ["user", "README content:\n{readmeContent}"],
+    ]);
+
+    // Create the chain
+    const chain = prompt.pipe(llm);
+
+    // Invoke the chain with the README content
+    const result = await chain.invoke({
+      readmeContent: readmeContent || "",
+    });
+
+    console.log("Summarization result:", result);
+
+    // Assuming the result has a 'content' property with the summary
+    // FIXME fix the return
+    // Ensure the `content` property exists and is accessible
+
+    return JSON.stringify(result.content) || "summary could not be generated.";
+  } catch (error) {
+    console.error("Error summarizing README:", error);
+    return "";
+  }
+};
+
+// Exports
+export {
+  downloadRepository,
+  collectCodeFiles,
+  generateDirectoryStructure,
+  summarizeReadme,
+  findReadmeFile,
+};

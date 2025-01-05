@@ -9,6 +9,7 @@ import {
   downloadRepository,
   collectCodeFiles,
   generateDirectoryStructure,
+  summarizeReadme,
 } from "./code_service.js";
 import express from "express";
 const app = express();
@@ -36,7 +37,7 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
 
     // using the repo url to make a name for the local path to store the code at
     const localPath = `./cloned_codebases/${folderName}`;
-    await collectCodeFiles(localPath, folderName);
+    await collectCodeFiles(localPath);
 
     // chunk the code base
     const docs = await chunkCodebase(localPath);
@@ -73,11 +74,14 @@ app.post("/api/query", async (req: any, res: any) => {
     const directoryStructure = await generateDirectoryStructure(folderName);
     console.log("directoryStructure is ", directoryStructure);
 
+    const readmeContent: string = await summarizeReadme(folderName);
+
     const response = await queryLLM(
       query,
       folderName,
       retrievedDocs,
-      directoryStructure
+      directoryStructure,
+      readmeContent
     );
     res.json({ message: response });
   } catch (error) {
@@ -91,5 +95,5 @@ app.all("*", (req: any, res: any) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port} 🚀`);
 });
