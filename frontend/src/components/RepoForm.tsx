@@ -12,8 +12,10 @@ export default function RepoForm() {
     e.preventDefault();
     setIsLoading(true);
 
+    const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL;
+
     try {
-      const response = await fetch("http://localhost:3000/api/embed-codebase", {
+      const response = await fetch(`${BACKEND_API_URL}/api/embed-codebase`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

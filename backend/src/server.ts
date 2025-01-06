@@ -18,7 +18,7 @@ import cors from "cors";
 
 app.use(
   cors({
-    origin: ["http://localhost:5173","http://143.110.183.231:5173"],
+    origin: ["http://localhost:5173", "http://143.110.183.231:5173"],
     credentials: true,
   })
 );
@@ -95,6 +95,6 @@ app.all("*", (req: any, res: any) => {
   res.status(404).json({ error: "Not found" });
 });
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running at http://localhost:${port} 🚀`);
 });
