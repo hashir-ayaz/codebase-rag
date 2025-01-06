@@ -55,7 +55,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col items-center px-4 py-10 h-screen min-h-screen bg-gray-50">
+    <div className="flex flex-col px-4 py-10 h-screen min-h-screen bg-gray-50 font-custom">
       <h1 className="mb-6 text-3xl font-bold text-gray-800">
         Chat with Your Codebase
       </h1>

@@ -332,10 +332,6 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
 
     console.log("Summarization result:", result);
 
-    // Assuming the result has a 'content' property with the summary
-    // FIXME fix the return
-    // Ensure the `content` property exists and is accessible
-
     return JSON.stringify(result.content) || "summary could not be generated.";
   } catch (error) {
     console.error("Error summarizing README:", error);

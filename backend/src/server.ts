@@ -4,7 +4,7 @@ import {
   retrieveFromVectorDb,
   queryLLM,
 } from "./chroma_db.js";
-import { generateNameForCodeFolder } from "./utils.js";
+import { generateNameForCodeFolder, sanitizeCollectionName } from "./utils.js";
 import {
   downloadRepository,
   collectCodeFiles,
@@ -32,7 +32,8 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
   try {
     // console.log("req.body is ", req);
     const repoUrl: string = req.body.repoUrl;
-    const folderName = generateNameForCodeFolder(repoUrl);
+    let folderName = generateNameForCodeFolder(repoUrl);
+    folderName = sanitizeCollectionName(folderName);
     await downloadRepository(repoUrl, folderName);
 
     // using the repo url to make a name for the local path to store the code at

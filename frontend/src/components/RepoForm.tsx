@@ -27,9 +27,7 @@ export default function RepoForm() {
         const data = await response.json();
         console.log("data is ", data);
         // save the folder name in local storage
-        if (data.folderName === undefined) {
-          throw new Error("folderName is undefined");
-        }
+
         localStorage.setItem("folderName", data.folderName);
 
         navigate("/chat");
@@ -44,7 +42,7 @@ export default function RepoForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 font-custom">
       <Input
         type="url"
         placeholder="https://github.com/username/repo"
