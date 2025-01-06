@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+
 export default function RepoForm() {
+
+ 
+
   const [repoUrl, setRepoUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -12,10 +16,10 @@ export default function RepoForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL;
+    const VITE_API_URL= import.meta.env.VITE_API_URL;
 
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/embed-codebase`, {
+      const response = await fetch(`${VITE_API_URL}/api/embed-codebase`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

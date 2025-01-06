@@ -28,10 +28,10 @@ export default function ChatInterface() {
       return;
     }
 
-    const BACKEND_API_URL = import.meta.env.VITE_BACKEND_URL;
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/query`, {
+      const response = await fetch(`${VITE_API_URL}/api/query`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
