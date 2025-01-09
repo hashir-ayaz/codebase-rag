@@ -21,8 +21,8 @@ services:
       - chromadb
 
   chromadb:
-    image: chromadb/chromadb:latest
+    image: chromadb/chroma:latest
     ports:
       - "8000:8000"
     environment:
-      - CHROMA_SERVER_CORS_ALLOW_ORIGINS='["http://143.110.183.231:3000"]'
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["http://143.110.183.231:3000"]

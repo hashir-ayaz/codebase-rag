@@ -60,11 +60,10 @@ const saveToVectorDb = async (folderName: string, docs: Document[]) => {
     // create vector store
     const vectorStore = new Chroma(embeddings, {
       collectionName: folderName,
-      // url: "http://localhost:8000",
-      url: CHROMA_URL, // Optional, will default to this value
+      url: CHROMA_URL,
       collectionMetadata: {
         "hnsw:space": "cosine",
-      }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
+      },
     });
     console.log("vector store created!");
     // add docs to vector store
@@ -88,26 +87,36 @@ const saveToVectorDb = async (folderName: string, docs: Document[]) => {
 };
 
 const retrieveFromVectorDb = async (query: string, folderName: string) => {
-  // get the vector store
-  const vectorStore = new Chroma(embeddings, {
-    collectionName: folderName,
-    url: "http://localhost:8001", // Optional, will default to this value
-    collectionMetadata: {
-      "hnsw:space": "cosine",
-    }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
-  });
-  console.log("vector store created!");
+  try {
+    // Initialize the vector store
+    const vectorStore = new Chroma(embeddings, {
+      collectionName: folderName,
+      url: process.env.CHROMA_URL, // Optional, will default to this value
+      collectionMetadata: {
+        "hnsw:space": "cosine",
+      }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
+    });
+    console.log("vector store created!");
 
-  // const filter = { source: "https://example.com" };
+    // Perform similarity search
+    const similaritySearchResults = await vectorStore.similaritySearch(query, 10);
 
-  const similaritySearchResults = await vectorStore.similaritySearch(query, 10);
+    for (const doc of similaritySearchResults) {
+      console.log(`* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`);
+    }
 
-  for (const doc of similaritySearchResults) {
-    console.log(`* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`);
+    return similaritySearchResults;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error querying the vector store: ${error.message}`);
+      console.error(`Stack trace: ${error.stack}`);
+    } else {
+      console.error(`An unexpected error occurred: ${error}`);
+    }
+    throw error; // Re-throw the error for the calling code to handle if necessary
   }
-
-  return similaritySearchResults;
 };
+
 
 const queryLLM = async (
   query: string,
