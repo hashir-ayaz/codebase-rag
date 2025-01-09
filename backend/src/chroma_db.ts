@@ -55,11 +55,13 @@ const chunkCodebase = async (localPath: string) => {
 };
 
 const saveToVectorDb = async (folderName: string, docs: Document[]) => {
+  const CHROMA_URL = process.env.CHROMA_URL;
   try {
     // create vector store
     const vectorStore = new Chroma(embeddings, {
       collectionName: folderName,
-      url: "http://localhost:8001", // Optional, will default to this value
+      // url: "http://localhost:8000",
+      url: CHROMA_URL, // Optional, will default to this value
       collectionMetadata: {
         "hnsw:space": "cosine",
       }, // Optional, can be used to specify the distance method of the embedding space https://docs.trychroma.com/usage-guide#changing-the-distance-function
