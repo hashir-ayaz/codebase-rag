@@ -57,13 +57,13 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col px-4 py-10 h-screen min-h-screen bg-gray-50 font-custom">
+    <div className="flex flex-col items-center justify-center h-screen min-h-screen px-4 py-10 bg-gray-50 font-custom">
       <h1 className="mb-6 text-3xl font-bold text-gray-800">
         Chat with Your Codebase
       </h1>
-      <Card className="h-screen shadow-lg max-w-2/3">
+      <Card className="w-full max-w-2xl shadow-lg">
         <CardContent className="p-6">
-          <div className="overflow-y-auto p-4 mb-4 space-y-4 h-96 bg-white rounded-lg border border-gray-200">
+          <div className="p-4 mb-4 space-y-4 overflow-y-auto bg-white border border-gray-200 rounded-lg h-96">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -82,12 +82,12 @@ export default function ChatInterface() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question about the codebase..."
-              className="flex-grow justify-center rounded-lg border-gray-300 shadow-sm"
+              className="justify-center flex-grow border-gray-300 rounded-lg shadow-sm"
             />
             <Button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2 text-white bg-gray-600 rounded-lg shadow transition hover:bg-blue-700"
+              className="px-6 py-2 text-white transition bg-gray-600 rounded-lg shadow hover:bg-blue-700"
             >
               {isLoading ? "Thinking..." : "Ask"}
             </Button>

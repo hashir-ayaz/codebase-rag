@@ -1,20 +1,8 @@
-"use client";
-
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Github } from "lucide-react";
 
 export default function Hero() {
-  const [githubUrl, setGithubUrl] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement GitHub repo processing logic
-    console.log("Processing GitHub repo:", githubUrl);
-  };
-
   return (
     <section className="px-4 py-20 text-center">
       <h1 className="mb-6 text-5xl font-bold">CODEBASE RAG</h1>
