@@ -39,6 +39,6 @@ services:
       - frontend
       - backend
 
-  volumes:
-    caddy_data:
-    caddy_config:
+volumes:
+  caddy_data:
+  caddy_config:

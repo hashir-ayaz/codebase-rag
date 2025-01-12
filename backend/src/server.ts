@@ -18,7 +18,7 @@ import cors from "cors";
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://143.110.183.231:5173"],
+    origin: ["http://localhost:5173", "http://143.110.183.231:5173","https://codebaserag.hashirayaz.site"],
     credentials: true,
   })
 );
