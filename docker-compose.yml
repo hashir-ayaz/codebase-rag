@@ -5,7 +5,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://143.110.183.231:3000
+      - VITE_API_URL=https://codebaserag.hashirayaz.site/api
+      # - VITE_API_URL=http://143.110.183.231:3000
     depends_on:
       - backend
 
@@ -24,7 +25,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["http://143.110.183.231:3000"]
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["http://143.110.183.231:3000","http://backend:3000"]
 
   caddy:
     image: caddy:2-alpine

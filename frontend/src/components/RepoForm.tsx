@@ -18,7 +18,7 @@ export default function RepoForm() {
     const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     try {
-      const response = await fetch(`${VITE_API_URL}/api/embed-codebase`, {
+      const response = await fetch(`${VITE_API_URL}/embed-codebase`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -40,7 +40,7 @@ export default function ChatInterface() {
     const VITE_API_URL = import.meta.env.VITE_API_URL;
 
     try {
-      const response = await fetch(`${VITE_API_URL}/api/query`, {
+      const response = await fetch(`${VITE_API_URL}/query`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

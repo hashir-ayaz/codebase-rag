@@ -16,6 +16,8 @@ const app = express();
 const port = 3000;
 import cors from "cors";
 
+app.set('trust proxy', true);
+
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://143.110.183.231:5173","https://codebaserag.hashirayaz.site"],
@@ -25,6 +27,10 @@ app.use(
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`Request received from ${req.ip} for ${req.url}`);
+  next();
+});
 /**
  * this endpoint will receive the repo url -> then download the repo -> then save the code into a file
  */
