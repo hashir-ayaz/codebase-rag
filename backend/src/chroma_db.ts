@@ -9,7 +9,7 @@ import type { Document } from "@langchain/core/documents";
 import path from "path";
 import { TextLoader } from "langchain/document_loaders/fs/text";
 import { ChatGroq } from "@langchain/groq";
-import { groqPrompt } from "./constants.js";
+import { formattedMessages, messages } from "./constants.js";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 config();
 
@@ -140,7 +140,7 @@ const queryLLM = async (
   });
 
   const fallbackLLM = new ChatGroq({
-    model: "llama3-8b-8192",
+    model: "llama-3.3-70b-versatile",
     temperature: 0,
     maxTokens: 1000,
     maxRetries: 2,
@@ -151,7 +151,11 @@ const queryLLM = async (
     fallbacks: [fallbackLLM],
   });
 
+  const groqPrompt = ChatPromptTemplate.fromMessages(formattedMessages);
   const prompt = groqPrompt;
+
+  // print the prompt
+  console.log("prompt", prompt);
 
   const chain = prompt.pipe(modelWithFallback);
 
@@ -167,6 +171,13 @@ const queryLLM = async (
     readmeContent,
   });
 
+  // appending the query and response to the prompt
+  formattedMessages.push(
+    { role: "user", content: query },
+    { role: "ai", content: JSON.stringify(response.content) }
+  );
+
+  console.log("the ai's response is", response);
   return response.content;
 };
 
