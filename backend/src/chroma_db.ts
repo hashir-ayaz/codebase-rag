@@ -99,10 +99,15 @@ const retrieveFromVectorDb = async (query: string, folderName: string) => {
     console.log("vector store created!");
 
     // Perform similarity search
-    const similaritySearchResults = await vectorStore.similaritySearch(query, 10);
+    const similaritySearchResults = await vectorStore.similaritySearch(
+      query,
+      10
+    );
 
     for (const doc of similaritySearchResults) {
-      console.log(`* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`);
+      console.log(
+        `* ${doc.pageContent} [${JSON.stringify(doc.metadata, null)}]`
+      );
     }
 
     return similaritySearchResults;
@@ -117,7 +122,6 @@ const retrieveFromVectorDb = async (query: string, folderName: string) => {
   }
 };
 
-
 const queryLLM = async (
   query: string,
   folderName: string,
@@ -125,18 +129,36 @@ const queryLLM = async (
   directoryStructure: any,
   readmeContent: string
 ) => {
+  console.log("inside the queryLLM function");
   //  query llama 3.1 with groq
-  const llm = new ChatGroq({
+  const primaryLLM = new ChatGroq({
     model: "llama-3.1-70b-versatile",
     temperature: 0,
-    maxTokens: undefined,
+    maxTokens: 1000,
     maxRetries: 2,
     apiKey: process.env.GROQ_API_KEY,
   });
 
+  const fallbackLLM = new ChatGroq({
+    model: "llama3-8b-8192",
+    temperature: 0,
+    maxTokens: 1000,
+    maxRetries: 2,
+    apiKey: process.env.GROQ_API_KEY,
+  });
+
+  const modelWithFallback = primaryLLM.withFallbacks({
+    fallbacks: [fallbackLLM],
+  });
+
   const prompt = groqPrompt;
 
-  const chain = prompt.pipe(llm);
+  const chain = prompt.pipe(modelWithFallback);
+
+  console.log("query", query);
+  console.log("retrievedDocs", retrievedDocs);
+  console.log("directoryStructure", directoryStructure);
+  console.log("readmeContent", readmeContent);
 
   const response = await chain.invoke({
     question: query,
