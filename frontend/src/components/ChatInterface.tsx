@@ -18,25 +18,32 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copiedIndices, setCopiedIndices] = useState<Set<number>>(new Set());
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+    setCopiedIndices((prev) => new Set(prev).add(index));
+    setTimeout(() => {
+      setCopiedIndices((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }, 2000);
   };
 
-  const renderMessageContent = (content: string) => {
+  const renderMessageContent = (content: string, index: number) => {
     const parts = content.split(/(```[\w]*\n[\s\S]*?\n```)/g);
 
-    return parts.map((part, index) => {
+    return parts.map((part, subIndex) => {
       if (part.startsWith("```")) {
+        // Handle block code
         const match = part.match(/```(\w+)?\n([\s\S]*?)\n```/);
         const language = match?.[1] || "plaintext";
         const code = match?.[2] || "";
 
         return (
-          <div key={index} className="relative my-2">
+          <div key={`${index}-${subIndex}`} className="relative my-2">
             <SyntaxHighlighter
               language={language}
               style={dracula}
@@ -49,11 +56,11 @@ export default function ChatInterface() {
               {code}
             </SyntaxHighlighter>
             <button
-              onClick={() => handleCopy(code, index)}
+              onClick={() => handleCopy(code, index * 1000 + subIndex)}
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-100"
             >
-              {copiedIndex === index ? (
-                <Check className="w-5 h-5" />
+              {copiedIndices.has(index * 1000 + subIndex) ? (
+                <Check className="w-5 h-5 text-green-400" />
               ) : (
                 <Clipboard className="w-5 h-5" />
               )}
@@ -62,7 +69,7 @@ export default function ChatInterface() {
         );
       } else {
         return (
-          <ReactMarkdown key={index} className="text-gray-200">
+          <ReactMarkdown key={`${index}-${subIndex}`} className="text-gray-200">
             {part.trim()}
           </ReactMarkdown>
         );
@@ -131,43 +138,44 @@ export default function ChatInterface() {
         >
           <Card className="shadow-xl bg-secondary border border-gray-700">
             <CardContent className="p-6">
-            <div className="overflow-y-auto p-4 mb-4 space-y-6 h-[36rem] bg-gray-800 rounded-lg border border-gray-600 text-textLight">
-            {messages.map((message, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`p-4 rounded-lg shadow-sm whitespace-pre-wrap w-full ${
-                  message.role === "user"
-                    ? "bg-gradient-to-r from-accent to-pinkishGlow text-white text-right"
-                    : "bg-gray-700 text-gray-200 text-left"
-                }`}
-              >
-                {message.content === "..." ? (
-                  <span className="flex justify-center items-center space-x-2">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-200"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-400"></span>
-                  </span>
-                ) : (
-                  renderMessageContent(message.content)
-                )}
-                {message.role === "assistant" && (
-                  <button
-                    onClick={() => handleCopy(message.content, index)}
-                    className="mt-2 text-sm text-gray-400 hover:text-gray-100"
+              <div className="overflow-y-auto p-4 mb-4 space-y-6 h-[36rem] bg-gray-800 rounded-lg border border-gray-600 text-textLight">
+                {messages.map((message, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className={`p-4 rounded-lg shadow-sm whitespace-pre-wrap w-full ${
+                      message.role === "user"
+                        ? "bg-gradient-to-r from-accent to-pinkishGlow text-white text-right"
+                        : "bg-gray-700 text-gray-200 text-left"
+                    }`}
                   >
-                    {copiedIndex === index ? (
-                <Check className="w-5 h-5" />
-              ) : (
-                <Clipboard className="w-5 h-5" />
-              )}
-                  </button>
-                )}
-              </motion.div>
-            ))}
-          </div>
+                    {message.content === "..." ? (
+                      <span className="flex justify-center items-center space-x-2">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-200"></span>
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-400"></span>
+                      </span>
+                    ) : (
+                      renderMessageContent(message.content, index)
+                    )}
+                    {message.role === "assistant" &&
+                      message.content !== "..." && ( // Hide copy button during loading
+                        <button
+                          onClick={() => handleCopy(message.content, index)}
+                          className="mt-2 text-sm text-gray-400 hover:text-gray-100"
+                        >
+                          {copiedIndices.has(index) ? (
+                            <Check className="w-5 h-5 text-green-400" />
+                          ) : (
+                            <Clipboard className="w-5 h-5" />
+                          )}
+                        </button>
+                      )}
+                  </motion.div>
+                ))}
+              </div>
               <motion.form
                 onSubmit={handleSubmit}
                 className="flex items-center space-x-3"
