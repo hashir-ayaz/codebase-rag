@@ -77,7 +77,10 @@ Remember: Your purpose is to assist with coding questions related to the specifi
   ],
   ["system", `{context}`],
   ["system", "Project README:\n{readmeContent}"],
-  ["system", "Codebase Directory Structure:\n{directoryStructure}"],
+  [
+    "system",
+    "Codebase Directory Structure:\n{directoryStructure} ) Ignore the 'all_code.txt' file.",
+  ],
   [
     "user",
     "Answer the following question about the provided codebase: {question}",
