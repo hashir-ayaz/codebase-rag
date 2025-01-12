@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -26,7 +24,7 @@ export default function RepoForm() {
         body: JSON.stringify({ repoUrl }),
       });
 
-      if (response.status === 200) {
+      if (response.ok) {
         const data = await response.json();
         localStorage.setItem("folderName", data.folderName);
         navigate("/chat");
@@ -41,18 +39,18 @@ export default function RepoForm() {
   };
 
   return (
-    <section className="px-4 py-24 bg-gradient-to-b from-gray-50 to-white">
+    <section className="px-6 py-24">
       <div className="mx-auto max-w-lg text-center">
         <motion.h2
-          className="mb-8 text-4xl font-extrabold text-gray-900"
+          className="mb-8 text-4xl font-extrabold text-white "
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Submit Your <span className="text-blue-600">Repository</span>
+          Submit Your Repository
         </motion.h2>
         <motion.p
-          className="mb-8 text-lg text-gray-600"
+          className="mb-8 text-lg text-gray-400"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -76,12 +74,13 @@ export default function RepoForm() {
             className="w-full"
           />
           <Button
-            type="submit"
-            className="w-full text-white bg-blue-600 hover:bg-blue-700"
-            disabled={isLoading}
-          >
-            {isLoading ? "Submitting..." : "Analyze Repo"}
-          </Button>
+  type="submit"
+  className="w-full text-white bg-gradient-to-r from-accent to-pinkishGlow py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-[0_0_30px_rgba(244,114,182,0.7)] disabled:opacity-50"
+  disabled={isLoading}
+>
+  {isLoading ? "Submitting..." : "Analyze"}
+</Button>
+
         </motion.form>
       </div>
     </section>

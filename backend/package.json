@@ -20,7 +20,7 @@
     "@types/unzipper": "^0.10.10",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@langchain/community": "^0.3.22",
@@ -38,6 +38,7 @@
     "express": "^4.21.2",
     "fs-extra": "^11.2.0",
     "langchain": "^0.3.9",
+    "react-typed": "^2.0.12",
     "simple-git": "^3.27.0",
     "unzipper": "^0.12.3"
   }
