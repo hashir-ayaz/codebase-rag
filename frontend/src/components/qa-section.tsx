@@ -17,13 +17,11 @@ export default function QASection() {
 
   return (
     <section className="px-4 py-20">
-      <h2 className="mb-12 text-3xl font-bold text-center">
-        Ask About Your Codebase
-      </h2>
-      <div className="max-w-3xl mx-auto">
+      <h2 className="mb-12 text-3xl font-bold text-center">Leave Feedback</h2>
+      <div className="mx-auto max-w-3xl">
         <form onSubmit={handleSubmit} className="mb-8">
           <Textarea
-            placeholder="Ask a question about your codebase..."
+            placeholder="Feedback..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             className="mb-4"

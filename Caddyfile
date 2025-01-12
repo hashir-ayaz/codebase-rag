@@ -1,0 +1,19 @@
+codebaserag.hashirayaz.site {
+    encode gzip
+    log {
+        output file /var/log/caddy/codebaserag.log
+    }
+
+    reverse_proxy frontend:5173 {
+        header_up Host {http.reverse_proxy.upstream.hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    tls {
+        protocols tls1.2 tls1.3
+        curves x25519
+        alpn http/1.1 h2
+    }
+}

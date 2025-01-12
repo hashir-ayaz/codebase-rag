@@ -1,4 +1,3 @@
-
 services:
   frontend:
     build:
@@ -26,3 +25,20 @@ services:
       - "8000:8000"
     environment:
       - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["http://143.110.183.231:3000"]
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+
+  volumes:
+    caddy_data:
+    caddy_config:
