@@ -10,11 +10,13 @@ import {
   collectCodeFiles,
   generateDirectoryStructure,
   summarizeReadme,
+  parseRepoUrl,
 } from "./code_service.js";
 import express from "express";
 const app = express();
 const port = 3000;
 import cors from "cors";
+import AppError from "./error/AppError.js";
 
 app.set("trust proxy", true); //only needed for deployment
 
@@ -42,9 +44,13 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
   try {
     // console.log("req.body is ", req);
     const repoUrl: string = req.body.repoUrl;
+
+    const { owner, repo } = parseRepoUrl(repoUrl);
+
     let folderName = generateNameForCodeFolder(repoUrl);
     folderName = sanitizeCollectionName(folderName);
-    await downloadRepository(repoUrl, folderName);
+
+    await downloadRepository(owner, repo, folderName);
 
     // using the repo url to make a name for the local path to store the code at
     const localPath = `./cloned_codebases/${folderName}`;
@@ -56,15 +62,17 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
     console.log("chunking codebase done");
     await saveToVectorDb(folderName, docs);
 
-    res
-      .json({
-        message: "Repository downloaded and code collected.",
-        folderName,
-      })
-      .status(200);
+    res.status(200).json({
+      message: "Repository downloaded and code collected.",
+      folderName,
+    });
   } catch (error: any) {
-    console.error("Error in Embedding and saving the codebase", error);
-    res.json({ error: error.message }).status(500);
+    if (error instanceof AppError) {
+      res.status(error.status).json({ error: error.message });
+    } else {
+      console.error("Error in embedding codebase", error);
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 

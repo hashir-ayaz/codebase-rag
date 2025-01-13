@@ -7,6 +7,7 @@ import axios from "axios";
 import { validExtensions } from "./constants.js";
 import { ChatGroq } from "@langchain/groq";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import AppError from "./error/AppError.js";
 
 // Initialize Git
 const git = simpleGit();
@@ -30,7 +31,7 @@ const parseRepoUrl = (repoUrl: string): { owner: string; repo: string } => {
   try {
     const match = repoUrl.match(/github\.com\/(.+?)\/(.+?)(\.git)?$/);
     if (!match) {
-      throw new Error("Invalid GitHub repository URL.");
+      throw new AppError("Invalid GitHub repository URL.", 400);
     }
     return { owner: match[1], repo: match[2] };
   } catch (error) {
@@ -54,8 +55,9 @@ const downloadZip = async (zipUrl: string, zipPath: string) => {
     });
 
     if (response.status !== 200) {
-      throw new Error(
-        `Failed to download ZIP file. Status code: ${response.status}`
+      throw new AppError(
+        `Failed to download ZIP file. Status code: ${response.status}`,
+        400
       );
     }
 
@@ -70,7 +72,7 @@ const downloadZip = async (zipUrl: string, zipPath: string) => {
     console.log("ZIP file downloaded.");
   } catch (error) {
     console.error("Error downloading ZIP file:", error);
-    throw new Error("Failed to download ZIP file.");
+    throw new AppError("Failed to download ZIP file.", 400);
   }
 };
 
@@ -91,7 +93,7 @@ const extractZip = async (zipPath: string, localPath: string) => {
     await fs.remove(zipPath); // Clean up ZIP file
   } catch (error) {
     console.error("Error extracting ZIP file:", error);
-    throw new Error("Failed to extract ZIP file.");
+    throw new AppError("Failed to extract ZIP file.", 400);
   }
 };
 
@@ -100,11 +102,14 @@ const extractZip = async (zipPath: string, localPath: string) => {
  * @param {string} repoUrl - The GitHub repository URL.
  * @param {string} folderName - The local folder name to save the repository.
  */
-const downloadRepository = async (repoUrl: string, folderName: string) => {
+const downloadRepository = async (
+  owner: string,
+  repo: string,
+  folderName: string
+) => {
   const localPath = `./cloned_codebases/${folderName}`;
 
   try {
-    const { owner, repo } = parseRepoUrl(repoUrl);
     const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
     const zipPath = path.join(localPath, `${repo}.zip`);
 
@@ -117,7 +122,7 @@ const downloadRepository = async (repoUrl: string, folderName: string) => {
     console.log(`Repository extracted to: ${localPath}`);
   } catch (error) {
     console.error("Error downloading repository:", error);
-    throw new Error("Failed to download repository.");
+    throw new AppError("Failed to download repository.", 400);
   }
 };
 
@@ -167,7 +172,7 @@ const processDirectory = async (
     }
   } catch (error) {
     console.error(`Error processing directory (${currentPath}):`, error);
-    throw new Error(`Failed to process directory: ${currentPath}`);
+    throw new AppError(`Failed to process directory: ${currentPath}`, 400);
   }
 };
 
@@ -235,7 +240,10 @@ const generateFolderStructure = async (
     return structure;
   } catch (error) {
     console.error(`Error generating folder structure (${folderPath}):`, error);
-    throw new Error(`Failed to generate folder structure: ${folderPath}`);
+    throw new AppError(
+      `Failed to generate folder structure: ${folderPath}`,
+      500
+    );
   }
 };
 
@@ -260,8 +268,9 @@ const generateDirectoryStructure = async (
       console.error(
         `Unexpected error generating directory structure: ${error}`
       );
-      throw new Error(
-        `Unexpected error generating directory structure: ${folderName}`
+      throw new AppError(
+        `Unexpected error generating directory structure: ${folderName}`,
+        400
       );
     }
   }
@@ -292,7 +301,7 @@ const findReadmeFile = async (currentPath: string): Promise<string | null> => {
     return null;
   } catch (error) {
     console.error(`Error finding README file in (${currentPath}):`, error);
-    throw new Error(`Failed to find README file in: ${currentPath}`);
+    throw new AppError(`Failed to find README file in: ${currentPath}`, 400);
   }
 };
 
@@ -343,7 +352,7 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
     return JSON.stringify(result.content) || "summary could not be generated.";
   } catch (error) {
     console.error("Error summarizing README:", error);
-    throw new Error("Failed to summarize README.");
+    throw new AppError("Failed to summarize README.", 400);
   }
 };
 
@@ -354,4 +363,5 @@ export {
   generateDirectoryStructure,
   summarizeReadme,
   findReadmeFile,
+  parseRepoUrl,
 };
