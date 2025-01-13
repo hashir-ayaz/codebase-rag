@@ -37,6 +37,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "fs-extra": "^11.2.0",
+    "ioredis": "^5.4.2",
     "langchain": "^0.3.9",
     "react-typed": "^2.0.12",
     "simple-git": "^3.27.0",

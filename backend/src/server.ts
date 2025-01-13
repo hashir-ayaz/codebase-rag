@@ -17,6 +17,7 @@ const app = express();
 const port = 3000;
 import cors from "cors";
 import AppError from "./error/AppError.js";
+import { initRedis, redis } from "./redisConfig.js";
 
 app.set("trust proxy", true); //only needed for deployment
 
@@ -37,6 +38,13 @@ app.use((req, res, next) => {
   console.log(`Request received from ${req.ip} for ${req.url}`);
   next();
 });
+
+// Middleware to use Redis in routes
+app.use((req: any, res, next) => {
+  req.redis = redis; // Attach Redis client to the request object
+  next();
+});
+
 /**
  * this endpoint will receive the repo url -> then download the repo -> then save the code into a file
  */
@@ -88,13 +96,38 @@ app.post("/api/query", async (req: any, res: any) => {
   try {
     const query: string = req.body.query;
     const folderName: string = req.body.folderName;
+
+    const redis = req.redis;
+
+    // Attempt to fetch from Redis cache
+    let cachedData = await redis.get(folderName);
+
+    let directoryStructure, readmeContent;
+
+    if (cachedData) {
+      console.log(`Cache hit for folderName: ${folderName}`);
+      const parsedData = JSON.parse(cachedData);
+      directoryStructure = parsedData.directoryStructure;
+      readmeContent = parsedData.readmeContent;
+    } else {
+      console.log(`Cache miss for folderName: ${folderName}`);
+      // Generate directory structure and readme content
+      directoryStructure = await generateDirectoryStructure(folderName);
+      readmeContent = await summarizeReadme(folderName);
+
+      // Cache the result in Redis
+      const dataToCache = {
+        directoryStructure,
+        readmeContent,
+      };
+
+      await redis.set(folderName, JSON.stringify(dataToCache), "EX", 3600); // Cache expires in 1 hour
+    }
+
+    // Retrieve relevant documents from Vector DB
     const retrievedDocs = await retrieveFromVectorDb(query, folderName);
 
-    const directoryStructure = await generateDirectoryStructure(folderName);
-    console.log("directoryStructure is ", directoryStructure);
-
-    const readmeContent: string = await summarizeReadme(folderName);
-
+    // Call the LLM with the required data
     const response = await queryLLM(
       query,
       folderName,
@@ -102,16 +135,25 @@ app.post("/api/query", async (req: any, res: any) => {
       directoryStructure,
       readmeContent
     );
-    res.json({ message: response });
+
+    res.status(200).json({ message: response });
   } catch (error: any) {
     console.error("Error in querying the codebase", error);
-    res.json({ error: error.message }).status(500);
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.all("*", (req: any, res: any) => {
   res.status(404).json({ error: "Not found" });
 });
+
+(async () => {
+  try {
+    await initRedis();
+  } catch (error) {
+    console.error("Error initializing Redis:", error);
+  }
+})();
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running at http://localhost:${port} 🚀`);
