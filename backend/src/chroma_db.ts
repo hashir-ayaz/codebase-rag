@@ -173,8 +173,12 @@ const queryLLM = async (
 
   // appending the query and response to the prompt
   formattedMessages.push(
-    { role: "user", content: query },
-    { role: "ai", content: JSON.stringify(response.content) }
+    { role: "ai", content: JSON.stringify(response.content) },
+    {
+      role: "user",
+      content:
+        "Answer the following question about the provided codebase: {question}",
+    }
   );
 
   console.log("the ai's response is", response);
