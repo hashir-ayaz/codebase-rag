@@ -1,10 +1,13 @@
-"use client";
-
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { fetchQuery } from "@/api/query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { dracula } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Clipboard, Check, Send } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -15,21 +18,68 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedIndices, setCopiedIndices] = useState<Set<number>>(new Set());
+
+  const handleCopy = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndices((prev) => new Set(prev).add(index));
+    setTimeout(() => {
+      setCopiedIndices((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }, 2000);
+  };
+
+  const renderMessageContent = (content: string, index: number) => {
+    const parts = content.split(/(```[\w]*\n[\s\S]*?\n```)/g);
+
+    return parts.map((part, subIndex) => {
+      if (part.startsWith("```")) {
+        // Handle block code
+        const match = part.match(/```(\w+)?\n([\s\S]*?)\n```/);
+        const language = match?.[1] || "plaintext";
+        const code = match?.[2] || "";
+
+        return (
+          <div key={`${index}-${subIndex}`} className="relative my-2">
+            <SyntaxHighlighter
+              language={language}
+              style={dracula}
+              customStyle={{
+                borderRadius: "8px",
+                backgroundColor: "#1E1E1E",
+                padding: "10px",
+              }}
+            >
+              {code}
+            </SyntaxHighlighter>
+            <button
+              onClick={() => handleCopy(code, index * 1000 + subIndex)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-100"
+            >
+              {copiedIndices.has(index * 1000 + subIndex) ? (
+                <Check className="w-5 h-5 text-green-400" />
+              ) : (
+                <Clipboard className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        );
+      } else {
+        return (
+          <ReactMarkdown key={`${index}-${subIndex}`} className="text-gray-200">
+            {part.trim()}
+          </ReactMarkdown>
+        );
+      }
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-
-    const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
-    // Add skeleton loading message
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "..." }, // Placeholder for the loading dots
-    ]);
 
     const folderName = localStorage.getItem("folderName");
     if (!folderName) {
@@ -37,69 +87,65 @@ export default function ChatInterface() {
       return;
     }
 
-    const VITE_API_URL = import.meta.env.VITE_API_URL;
+    const userMessage: Message = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    setMessages((prev) => [...prev, { role: "assistant", content: "..." }]);
 
     try {
-      const response = await fetch(`${VITE_API_URL}/query`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: input, folderName }),
+      const response = await fetchQuery(input, folderName);
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: response.message,
+      };
+
+      setMessages((prev) => {
+        const updatedMessages = [...prev];
+        updatedMessages.pop();
+        return [...updatedMessages, assistantMessage];
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const assistantMessage: Message = {
-          role: "assistant",
-          content: data.message,
-        };
-        setMessages((prev) => {
-          // Remove the skeleton message before adding the real response
-          const updatedMessages = [...prev];
-          updatedMessages.pop(); // Remove the last skeleton message
-          return [...updatedMessages, assistantMessage];
-        });
-      } else {
-        console.error("Failed to get answer");
-      }
     } catch (error) {
-      console.error("Error asking question:", error);
+      console.error("Error in handleSubmit:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
-    <section className="px-4 py-24 bg-gradient-to-b from-gray-50 to-white">
-      <div className="mx-auto max-w-4xl">
+    <section className="px-6 py-12">
+      <div className="mx-auto max-w-5xl">
         <motion.h1
-          className="mb-8 text-4xl font-extrabold text-center text-gray-900"
+          className="mb-8 text-5xl font-extrabold text-center text-white"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Chat with Your <span className="text-blue-600">Codebase</span>
+          Chat with Your{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-pinkishGlow">
+            Codebase
+          </span>
         </motion.h1>
         <motion.div
-          className="relative mx-auto w-full max-w-3xl"
+          className="relative mx-auto w-full max-w-4xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card className="shadow-xl">
+          <Card className="border border-gray-700 shadow-xl bg-secondary">
             <CardContent className="p-6">
-              <div className="overflow-y-auto p-4 mb-4 space-y-4 h-96 bg-white rounded-lg border border-gray-200">
+              <div className="overflow-y-auto p-4 mb-4 space-y-6 h-[36rem] bg-gray-800 rounded-lg border border-gray-600 text-textLight">
                 {messages.map((message, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className={`p-3 rounded-lg shadow-sm whitespace-pre-wrap ${
+                    className={`p-4 rounded-lg shadow-sm whitespace-pre-wrap w-full ${
                       message.role === "user"
-                        ? "bg-blue-500 text-white self-end text-right"
-                        : "bg-gray-100 text-gray-800"
+                        ? "bg-gradient-to-r from-accent to-pinkishGlow text-white text-right"
+                        : "bg-gray-700 text-gray-200 text-left"
                     }`}
                   >
                     {message.content === "..." ? (
@@ -109,8 +155,21 @@ export default function ChatInterface() {
                         <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-400"></span>
                       </span>
                     ) : (
-                      message.content
+                      renderMessageContent(message.content, index)
                     )}
+                    {message.role === "assistant" &&
+                      message.content !== "..." && ( // Hide copy button during loading
+                        <button
+                          onClick={() => handleCopy(message.content, index)}
+                          className="mt-2 text-sm text-gray-400 hover:text-gray-100"
+                        >
+                          {copiedIndices.has(index) ? (
+                            <Check className="w-5 h-5 text-green-400" />
+                          ) : (
+                            <Clipboard className="w-5 h-5" />
+                          )}
+                        </button>
+                      )}
                   </motion.div>
                 ))}
               </div>
@@ -125,14 +184,14 @@ export default function ChatInterface() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a question about the codebase..."
-                  className="flex-grow rounded-lg border-gray-300 shadow-sm"
+                  className="flex-grow text-white bg-gray-800 rounded-lg border-gray-600 shadow-sm"
                 />
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="px-6 py-2 text-white bg-blue-600 rounded-lg shadow transition hover:bg-blue-700"
+                  className="px-6 py-2 text-white bg-gradient-to-r rounded-lg shadow transition from-accent to-pinkishGlow"
                 >
-                  {isLoading ? "Thinking..." : "Ask"}
+                  <Send className="w-5 h-5" />
                 </Button>
               </motion.form>
             </CardContent>
