@@ -3,7 +3,6 @@ import { Chroma } from "@langchain/community/vectorstores/chroma";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { config } from "dotenv";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { promises as fs } from "fs";
 import { generateUUID } from "./utils.js";
 import type { Document } from "@langchain/core/documents";
 import path from "path";

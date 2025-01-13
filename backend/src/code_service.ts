@@ -334,7 +334,15 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are an expert software engineer. I will provide you with the content of a readme file, and you will provide me with a summary of the file. Describe what the project does, from a high-level and technical perspective.",
+        `You are an expert software engineer analyzing a README file. Provide a concise summary of the project, covering:
+    
+    1. Project purpose and main functionality
+    2. Key technologies and languages used
+    3. Main features (2-3 points)
+    4. Basic setup/installation process
+    5. High-level technical architecture
+    
+    Keep your summary brief but informative, suitable for a quick technical overview.`,
       ],
       ["user", "README content:\n{readmeContent}"],
     ]);
