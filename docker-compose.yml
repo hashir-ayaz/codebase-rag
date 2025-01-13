@@ -17,8 +17,12 @@ services:
       - "3000:3000"
     environment:
       - CHROMA_DB_URL=http://chromadb:8000 # Backend connects to ChromaDB
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redisredis619
     depends_on:
       - chromadb
+      - redis
 
   chromadb:
     image: chromadb/chroma:latest
@@ -40,6 +44,16 @@ services:
       - frontend
       - backend
 
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+
 volumes:
   caddy_data:
   caddy_config:
+  redis_data:
