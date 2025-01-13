@@ -24,6 +24,8 @@ export default function RepoForm() {
         body: JSON.stringify({ repoUrl }),
       });
 
+      console.log("response is ", response);
+
       if (response.status === 200) {
         const data = await response.json();
         localStorage.setItem("folderName", data.folderName);

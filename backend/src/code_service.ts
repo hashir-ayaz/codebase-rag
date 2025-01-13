@@ -70,7 +70,7 @@ const downloadZip = async (zipUrl: string, zipPath: string) => {
     console.log("ZIP file downloaded.");
   } catch (error) {
     console.error("Error downloading ZIP file:", error);
-    throw error;
+    throw new Error("Failed to download ZIP file.");
   }
 };
 
@@ -91,7 +91,7 @@ const extractZip = async (zipPath: string, localPath: string) => {
     await fs.remove(zipPath); // Clean up ZIP file
   } catch (error) {
     console.error("Error extracting ZIP file:", error);
-    throw error;
+    throw new Error("Failed to extract ZIP file.");
   }
 };
 
@@ -117,7 +117,7 @@ const downloadRepository = async (repoUrl: string, folderName: string) => {
     console.log(`Repository extracted to: ${localPath}`);
   } catch (error) {
     console.error("Error downloading repository:", error);
-    throw error;
+    throw new Error("Failed to download repository.");
   }
 };
 
@@ -138,7 +138,7 @@ const processFile = async (filePath: string, outputFilePath: string) => {
     console.log(`Added content from: ${filePath}`);
   } catch (error) {
     console.error(`Error processing file (${filePath}):`, error);
-    throw error;
+    throw new Error(`Failed to process file: ${filePath}`);
   }
 };
 
@@ -167,7 +167,7 @@ const processDirectory = async (
     }
   } catch (error) {
     console.error(`Error processing directory (${currentPath}):`, error);
-    throw error;
+    throw new Error(`Failed to process directory: ${currentPath}`);
   }
 };
 
@@ -184,8 +184,7 @@ const collectCodeFiles = async (dirPath: string) => {
     console.log(`All code files aggregated into: ${outputFilePath}`);
   } catch (error) {
     console.error("Error while collecting code files:", error);
-    // Optionally rethrow if you want the caller to handle it
-    throw error;
+    throw new Error("Failed to collect code files.");
   }
 };
 
@@ -236,7 +235,7 @@ const generateFolderStructure = async (
     return structure;
   } catch (error) {
     console.error(`Error generating folder structure (${folderPath}):`, error);
-    return null;
+    throw new Error(`Failed to generate folder structure: ${folderPath}`);
   }
 };
 
@@ -254,13 +253,17 @@ const generateDirectoryStructure = async (
   try {
     return await generateFolderStructure(localPath, depth);
   } catch (error) {
-    if (error instanceof Error)
+    if (error instanceof Error) {
       console.error(`Error generating directory structure: ${error.message}`);
-    else
+      throw new Error(`Failed to generate directory structure: ${folderName}`);
+    } else {
       console.error(
         `Unexpected error generating directory structure: ${error}`
       );
-    return null;
+      throw new Error(
+        `Unexpected error generating directory structure: ${folderName}`
+      );
+    }
   }
 };
 
@@ -289,7 +292,7 @@ const findReadmeFile = async (currentPath: string): Promise<string | null> => {
     return null;
   } catch (error) {
     console.error(`Error finding README file in (${currentPath}):`, error);
-    throw error;
+    throw new Error(`Failed to find README file in: ${currentPath}`);
   }
 };
 
@@ -340,7 +343,7 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
     return JSON.stringify(result.content) || "summary could not be generated.";
   } catch (error) {
     console.error("Error summarizing README:", error);
-    return "";
+    throw new Error("Failed to summarize README.");
   }
 };
 

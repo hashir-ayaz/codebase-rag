@@ -16,11 +16,15 @@ const app = express();
 const port = 3000;
 import cors from "cors";
 
-app.set('trust proxy', true);
+app.set("trust proxy", true); //only needed for deployment
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://143.110.183.231:5173","https://codebaserag.hashirayaz.site"],
+    origin: [
+      "http://localhost:5173",
+      "http://143.110.183.231:5173",
+      "https://codebaserag.hashirayaz.site",
+    ],
     credentials: true,
   })
 );
@@ -58,9 +62,9 @@ app.post("/api/embed-codebase", async (req: any, res: any) => {
         folderName,
       })
       .status(200);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in Embedding and saving the codebase", error);
-    res.json({ error: error }).status(500);
+    res.json({ error: error.message }).status(500);
   }
 });
 
@@ -91,9 +95,9 @@ app.post("/api/query", async (req: any, res: any) => {
       readmeContent
     );
     res.json({ message: response });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in querying the codebase", error);
-    res.json({ error: error });
+    res.json({ error: error.message }).status(500);
   }
 });
 
