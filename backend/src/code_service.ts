@@ -322,12 +322,24 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
     const readmeContent = await fs.readFile(readmePath, "utf8");
 
     // Initialize the LLM for summarization
-    const llm = new ChatGroq({
-      model: "llama3-8b-8192",
+    const primaryLLM = new ChatGroq({
+      model: "llama-3.1-8b-instant",
       temperature: 0,
       maxTokens: undefined,
       maxRetries: 2,
       apiKey: process.env.GROQ_API_KEY,
+    });
+
+    const fallbackLLM = new ChatGroq({
+      model: "llama3-8b-8192",
+      temperature: 0,
+      maxTokens: 1000,
+      maxRetries: 2,
+      apiKey: process.env.GROQ_API_KEY,
+    });
+
+    const modelWithFallback = primaryLLM.withFallbacks({
+      fallbacks: [fallbackLLM],
     });
 
     // Define the prompt template
@@ -348,7 +360,7 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
     ]);
 
     // Create the chain
-    const chain = prompt.pipe(llm);
+    const chain = prompt.pipe(modelWithFallback);
 
     // Invoke the chain with the README content
     const result = await chain.invoke({
