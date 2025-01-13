@@ -132,7 +132,7 @@ const queryLLM = async (
   console.log("inside the queryLLM function");
   //  query llama 3.1 with groq
   const primaryLLM = new ChatGroq({
-    model: "llama-3.1-70b-versatile",
+    model: "llama3-8b-8192",
     temperature: 0,
     maxTokens: 1000,
     maxRetries: 2,
@@ -140,7 +140,7 @@ const queryLLM = async (
   });
 
   const fallbackLLM = new ChatGroq({
-    model: "llama-3.3-70b-versatile",
+    model: "llama-3.1-8b-instant",
     temperature: 0,
     maxTokens: 1000,
     maxRetries: 2,

@@ -323,7 +323,7 @@ const summarizeReadme = async (folderName: string): Promise<string> => {
 
     // Initialize the LLM for summarization
     const llm = new ChatGroq({
-      model: "llama-3.1-70b-versatile",
+      model: "llama3-8b-8192",
       temperature: 0,
       maxTokens: undefined,
       maxRetries: 2,
