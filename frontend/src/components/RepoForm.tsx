@@ -24,15 +24,17 @@ export default function RepoForm() {
         body: JSON.stringify({ repoUrl }),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         const data = await response.json();
         localStorage.setItem("folderName", data.folderName);
         navigate("/chat");
       } else {
         console.error("Failed to submit repo");
+        alert("Failed to submit repo");
       }
     } catch (error) {
       console.error("Error submitting repo:", error);
+      alert("Error submitting repo");
     }
 
     setIsLoading(false);
@@ -42,7 +44,7 @@ export default function RepoForm() {
     <section className="px-6 py-24">
       <div className="mx-auto max-w-lg text-center">
         <motion.h2
-          className="mb-8 text-4xl font-extrabold text-white "
+          className="mb-8 text-4xl font-extrabold text-white"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -74,13 +76,12 @@ export default function RepoForm() {
             className="w-full"
           />
           <Button
-  type="submit"
-  className="w-full text-white bg-gradient-to-r from-accent to-pinkishGlow py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-[0_0_30px_rgba(244,114,182,0.7)] disabled:opacity-50"
-  disabled={isLoading}
->
-  {isLoading ? "Submitting..." : "Analyze"}
-</Button>
-
+            type="submit"
+            className="w-full text-white bg-gradient-to-r from-accent to-pinkishGlow py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-[0_0_30px_rgba(244,114,182,0.7)] disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? "Submitting..." : "Analyze"}
+          </Button>
         </motion.form>
       </div>
     </section>

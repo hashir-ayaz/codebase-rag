@@ -32,7 +32,10 @@ export default function ChatInterface() {
     }, 2000);
   };
 
-  const renderMessageContent = (content: string, index: number) => {
+  const renderMessageContent = (
+    content: string = "I don't know",
+    index: number
+  ) => {
     const parts = content.split(/(```[\w]*\n[\s\S]*?\n```)/g);
 
     return parts.map((part, subIndex) => {

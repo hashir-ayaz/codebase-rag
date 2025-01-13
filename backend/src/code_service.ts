@@ -53,6 +53,12 @@ const downloadZip = async (zipUrl: string, zipPath: string) => {
       responseType: "stream",
     });
 
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to download ZIP file. Status code: ${response.status}`
+      );
+    }
+
     const writer = fs.createWriteStream(zipPath);
     response.data.pipe(writer);
 
@@ -111,8 +117,7 @@ const downloadRepository = async (repoUrl: string, folderName: string) => {
     console.log(`Repository extracted to: ${localPath}`);
   } catch (error) {
     console.error("Error downloading repository:", error);
-    // Optionally rethrow if you want the caller to handle it
-    // throw error;
+    throw error;
   }
 };
 
@@ -180,7 +185,7 @@ const collectCodeFiles = async (dirPath: string) => {
   } catch (error) {
     console.error("Error while collecting code files:", error);
     // Optionally rethrow if you want the caller to handle it
-    // throw error;
+    throw error;
   }
 };
 
