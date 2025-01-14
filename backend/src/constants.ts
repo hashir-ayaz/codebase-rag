@@ -76,7 +76,7 @@ Guidelines:
 
 Remember: Your purpose is to assist with coding questions related to the specific project and codebase provided. Stay focused on this task and do not deviate from your role as a specialized software engineering assistant.`,
   ],
-  ["system", `{context}`],
+  ["system", "Context:\n{context}"],
   ["system", "Project README:\n{readmeContent}"],
   [
     "system",
