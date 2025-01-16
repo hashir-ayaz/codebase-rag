@@ -7,6 +7,7 @@ This project provides a RESTful API for embedding and querying codebases. It ena
 ## Features
 
 - **Embed Codebase**:
+
   - Downloads a GitHub repository using a URL.
   - Processes and chunks the codebase.
   - Stores the processed data in a vector database.
@@ -21,6 +22,7 @@ This project provides a RESTful API for embedding and querying codebases. It ena
 ## API Endpoints
 
 ### 1. **Embed Codebase**
+
 - **POST** `/api/embed-codebase`
 - **Description**: Downloads and processes a GitHub repository, embedding its code into a vector database.
 - **Request Body**:
@@ -37,6 +39,7 @@ This project provides a RESTful API for embedding and querying codebases. It ena
   ```
 
 ### 2. **Query Codebase**
+
 - **POST** `/api/query`
 - **Description**: Queries the vector database with a natural language query.
 - **Request Body**:
@@ -49,7 +52,9 @@ This project provides a RESTful API for embedding and querying codebases. It ena
 - **Response**:
   ```json
   {
-    "response": [/* relevant code chunks */]
+    "response": [
+      /* relevant code chunks */
+    ]
   }
   ```
 
@@ -58,24 +63,27 @@ This project provides a RESTful API for embedding and querying codebases. It ena
 ## Installation
 
 1. **Clone the Repository**:
+
    ```bash
    git clone https://github.com/your-repo/codebase-embedding-api.git
    cd codebase-embedding-api
    ```
 
 2. **Install Dependencies**:
+
    ```bash
    npm install
    ```
 
-3. **Start the Server**:
-   ```bash
-   npm run start
-   ```
+3. **Build the Project**:
 
-4. **Build the Project** (TypeScript):
    ```bash
    npm run build
+   ```
+
+4. **Start Server** (TypeScript):
+   ```bash
+   node dist/server.js
    ```
 
 ---
@@ -110,4 +118,3 @@ cloned_codebases/         # Directory for downloaded repositories
 ```
 
 ---
-
